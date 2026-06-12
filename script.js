@@ -1,47 +1,42 @@
 // ------------------- РАБОТА С ХРАНИЛИЩЕМ -------------------
 const STORAGE_KEY = "diary_app_data";
 
-// Загрузка данных из localStorage
 function loadData() {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored) {
         return JSON.parse(stored);
-    } else {
-        // Начальные данные при первом запуске
-        return {
-            users: [
-                {
-                    id: "t1",
-                    login: "teacher",
-                    password: "123",
-                    role: "teacher",
-                    name: "Преподаватель"
-                },
-                {
-                    id: "c1",
-                    login: "cadet",
-                    password: "123",
-                    role: "cadet",
-                    name: "Иван",
-                    surname: "Иванов",
-                    class: "9А",
-                    grades: [
-                        { subject: "Военно Тактическая Подготовка", grades: [5,4,5] },
-                        { subject: "Русский язык", grades: [4,3,5] },
-                        { subject: "Юридический", grades: [4,5,4] }
-                    ]
-                }
-            ]
-        };
     }
+    // Начальные данные (без классов)
+    return {
+        users: [
+            {
+                id: "t1",
+                login: "teacher",
+                password: "123",
+                role: "teacher",
+                name: "Преподаватель"
+            },
+            {
+                id: "c1",
+                login: "cadet",
+                password: "123",
+                role: "cadet",
+                name: "Иван",
+                surname: "Иванов",
+                grades: [
+                    { subject: "Военно Тактическая Подготовка", grades: [5,4,5] },
+                    { subject: "Русский язык", grades: [4,3,5] },
+                    { subject: "Юридический", grades: [4,5,4] }
+                ]
+            }
+        ]
+    };
 }
 
-// Сохранение данных в localStorage
 function saveData(data) {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
 }
 
-// Глобальный объект данных
 let appData = loadData();
 let users = appData.users;
 let currentUser = null;
@@ -49,7 +44,6 @@ let currentCadetId = null;
 
 const subjects = ["Военно Тактическая Подготовка", "Русский язык", "Юридический"];
 
-// Вспомогательные функции
 function getCadetById(id) {
     return users.find(u => u.id === id && u.role === "cadet");
 }
@@ -59,8 +53,8 @@ function saveUsersToStorage() {
     saveData(appData);
 }
 
-// Добавление курсанта
-function addCadet(name, surname, className, login, password) {
+// Добавление курсанта (без класса)
+function addCadet(name, surname, login, password) {
     if (users.some(u => u.login === login)) {
         alert("Логин уже занят!");
         return false;
@@ -73,7 +67,6 @@ function addCadet(name, surname, className, login, password) {
         role: "cadet",
         name: name,
         surname: surname,
-        class: className,
         grades: subjects.map(s => ({ subject: s, grades: [] }))
     };
     users.push(newCadet);
@@ -81,7 +74,6 @@ function addCadet(name, surname, className, login, password) {
     return true;
 }
 
-// Добавление оценки
 function addGradeToCadet(cadetId, subjectName, grade) {
     const cadet = getCadetById(cadetId);
     if (!cadet) return false;
@@ -94,7 +86,6 @@ function addGradeToCadet(cadetId, subjectName, grade) {
     return false;
 }
 
-// Удаление последней оценки
 function removeLastGrade(cadetId, subjectName) {
     const cadet = getCadetById(cadetId);
     if (!cadet) return;
@@ -105,13 +96,12 @@ function removeLastGrade(cadetId, subjectName) {
     }
 }
 
-// Средний балл
 function avg(grades) {
     if (!grades.length) return "—";
     return (grades.reduce((a,b)=>a+b,0)/grades.length).toFixed(1);
 }
 
-// ------------------- ОТРИСОВКА -------------------
+// Отрисовка таблицы оценок для преподавателя
 function renderTeacherGrades(cadet) {
     const tbody = document.getElementById("gradesBody");
     tbody.innerHTML = "";
@@ -142,6 +132,7 @@ function renderTeacherGrades(cadet) {
     });
 }
 
+// Отрисовка для курсанта
 function renderCadetGrades(cadet) {
     const tbody = document.getElementById("cadetGradesBody");
     tbody.innerHTML = "";
@@ -161,15 +152,30 @@ function renderCadetGrades(cadet) {
     });
 }
 
-function updateCadetSelect() {
-    const select = document.getElementById("cadetSelect");
-    select.innerHTML = '<option value="">-- Выберите --</option>';
+// Отрисовка списка курсантов (большая сетка)
+function renderCadetsList() {
+    const grid = document.getElementById("cadetsGrid");
+    if (!grid) return;
     const cadets = users.filter(u => u.role === "cadet");
-    cadets.forEach(c => {
-        const opt = document.createElement("option");
-        opt.value = c.id;
-        opt.innerText = `${c.surname} ${c.name} (${c.class})`;
-        select.appendChild(opt);
+    grid.innerHTML = "";
+    cadets.forEach(cadet => {
+        const card = document.createElement("div");
+        card.className = "cadet-card";
+        if (currentCadetId === cadet.id) card.classList.add("selected");
+        card.innerHTML = `
+            <h4>${cadet.surname} ${cadet.name}</h4>
+            <p>📋 Логин: ${cadet.login}</p>
+        `;
+        card.onclick = () => {
+            // Снимаем выделение со всех карточек
+            document.querySelectorAll(".cadet-card").forEach(c => c.classList.remove("selected"));
+            card.classList.add("selected");
+            currentCadetId = cadet.id;
+            document.getElementById("gradesBlock").style.display = "block";
+            document.getElementById("selectedCadetName").innerHTML = `${cadet.surname} ${cadet.name}`;
+            renderTeacherGrades(cadet);
+        };
+        grid.appendChild(card);
     });
 }
 
@@ -186,18 +192,17 @@ function showTeacher() {
     document.getElementById("teacherPanel").style.display = "block";
     document.getElementById("cadetPanel").style.display = "none";
     document.getElementById("gradesBlock").style.display = "none";
-    updateCadetSelect();
+    renderCadetsList();
 }
 
 function showCadet(cadet) {
     document.getElementById("login-form").style.display = "none";
     document.getElementById("teacherPanel").style.display = "none";
     document.getElementById("cadetPanel").style.display = "block";
-    document.getElementById("cadetInfo").innerHTML = `<p><strong>${cadet.surname} ${cadet.name}, ${cadet.class}</strong></p>`;
+    document.getElementById("cadetInfo").innerHTML = `<p><strong>${cadet.surname} ${cadet.name}</strong></p>`;
     renderCadetGrades(cadet);
 }
 
-// ------------------- АВТОРИЗАЦИЯ -------------------
 function login(login, password) {
     const user = users.find(u => u.login === login && u.password === password);
     if (!user) {
@@ -213,18 +218,16 @@ function login(login, password) {
     return true;
 }
 
-// ------------------- ЗАПУСК ПРИ ЗАГРУЗКЕ -------------------
+// ------------------- ЗАПУСК -------------------
 document.addEventListener("DOMContentLoaded", () => {
     showLogin();
 
-    // Кнопка входа
     document.getElementById("doLogin").onclick = () => {
         const log = document.getElementById("login").value.trim();
         const pass = document.getElementById("password").value.trim();
         login(log, pass);
     };
 
-    // Выход
     document.getElementById("logoutTeacher").onclick = () => {
         currentUser = null;
         showLogin();
@@ -234,52 +237,30 @@ document.addEventListener("DOMContentLoaded", () => {
         showLogin();
     };
 
-    // Добавление курсанта
     document.getElementById("addCadetBtn").onclick = () => {
         const name = document.getElementById("newName").value.trim();
         const surname = document.getElementById("newSurname").value.trim();
-        const className = document.getElementById("newClass").value.trim();
         const login = document.getElementById("newLogin").value.trim();
         const pass = document.getElementById("newPass").value.trim();
-        if (!name || !surname || !className || !login || !pass) {
+        if (!name || !surname || !login || !pass) {
             alert("Заполните все поля!");
             return;
         }
-        if (addCadet(name, surname, className, login, pass)) {
+        if (addCadet(name, surname, login, pass)) {
             alert("Курсант добавлен!");
-            updateCadetSelect();
+            renderCadetsList();
             document.getElementById("newName").value = "";
             document.getElementById("newSurname").value = "";
-            document.getElementById("newClass").value = "";
             document.getElementById("newLogin").value = "";
             document.getElementById("newPass").value = "";
         } else {
-            alert("Ошибка добавления");
+            alert("Ошибка добавления (логин может быть занят)");
         }
     };
 
-    // Загрузка оценок выбранного курсанта
-    document.getElementById("loadGradesBtn").onclick = () => {
-        const cadetId = document.getElementById("cadetSelect").value;
-        if (!cadetId) {
-            alert("Выберите курсанта");
-            return;
-        }
-        currentCadetId = cadetId;
-        const cadet = getCadetById(cadetId);
-        if (cadet) {
-            document.getElementById("gradesBlock").style.display = "block";
-            document.getElementById("selectedCadetName").innerHTML = `${cadet.surname} ${cadet.name} (${cadet.class})`;
-            renderTeacherGrades(cadet);
-        } else {
-            alert("Курсант не найден");
-        }
-    };
-
-    // Добавление оценки
     document.getElementById("addGradeBtn").onclick = () => {
         if (!currentCadetId) {
-            alert("Сначала выберите курсанта и нажмите 'Загрузить оценки'");
+            alert("Сначала выберите курсанта из списка");
             return;
         }
         const subject = document.getElementById("subjectForGrade").value;
@@ -297,8 +278,9 @@ document.addEventListener("DOMContentLoaded", () => {
             document.getElementById("newGrade").value = "";
             const cadet = getCadetById(currentCadetId);
             renderTeacherGrades(cadet);
+            // Обновим карточки (если нужно, но данные только в оценках)
         } else {
-            alert("Ошибка добавления");
+            alert("Ошибка добавления оценки");
         }
     };
 });

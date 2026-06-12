@@ -67,7 +67,7 @@ button:hover {
 /* Сетка курсантов */
 .cadets-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
     gap: 16px;
     margin: 20px 0;
 }
@@ -102,6 +102,20 @@ button:hover {
     font-size: 0.75rem;
     display: inline-block;
     margin-top: 5px;
+}
+.grades-preview {
+    margin: 8px 0;
+    font-size: 0.8rem;
+    background: #eef;
+    padding: 5px;
+    border-radius: 12px;
+}
+.grades-preview span {
+    display: inline-block;
+    background: #fff;
+    padding: 2px 6px;
+    border-radius: 12px;
+    margin: 2px;
 }
 /* Таблицы */
 table {

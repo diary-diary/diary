@@ -20,7 +20,7 @@ h1, h2, h3 { color: #1e4663; }
 .card { max-width: 400px; margin: 30px auto; background: #f9fafc; padding: 20px; border-radius: 20px; }
 label { display: block; margin-top: 12px; font-weight: bold; }
 input, select, button { padding: 8px 12px; margin: 5px 8px 5px 0; border-radius: 12px; border: 1px solid #ccc; }
-button { background: #1e4663; color: white; border: none; cursor: pointer; }
+button { background: #1e4663; color: white; border: none; cursor: pointer; transition: 0.2s; }
 button:hover { background: #0f2e46; }
 .logout { background: #b33; float: right; }
 .error { color: red; margin-top: 10px; }
@@ -34,7 +34,7 @@ button:hover { background: #0f2e46; }
 .grades-preview { margin: 8px 0; font-size: 0.8rem; background: #eef; padding: 5px; border-radius: 12px; }
 .badge { background: #1e4663; color: white; padding: 2px 8px; border-radius: 20px; font-size: 0.75rem; display: inline-block; margin-top: 5px; }
 table { width: 100%; border-collapse: collapse; margin: 15px 0; }
-th, td { text-align: left; padding: 8px; border-bottom: 1px solid #ddd; }
+th, td { text-align: left; padding: 8px; border-bottom: 1px solid #ddd; vertical-align: middle; }
 th { background: #1e4663; color: white; }
 .grade { display: inline-block; background: #e0e7ff; padding: 4px 8px; border-radius: 20px; margin-right: 5px; }
 .add-cadet-form, .add-grade-form { background: #f4f9fe; padding: 15px; border-radius: 20px; margin: 15px 0; }
@@ -42,3 +42,7 @@ th { background: #1e4663; color: white; }
 .modal-content { background: #fff; margin: 10% auto; padding: 20px; border-radius: 24px; width: 90%; max-width: 500px; }
 .close { float: right; font-size: 28px; cursor: pointer; }
 #tasksList div { border: 1px solid #ddd; padding: 8px; margin: 8px 0; border-radius: 12px; }
+#syncStatus { position: fixed; bottom: 10px; right: 10px; padding: 5px 10px; border-radius: 20px; font-size: 11px; background: #eee; z-index: 1000; }
+.syncing { background: #f39c12; color: white; }
+.synced { background: #27ae60; color: white; }
+.error-sync { background: #e74c3c; color: white; }

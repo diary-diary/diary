@@ -1,6 +1,6 @@
 * {
     box-sizing: border-box;
-    font-family: system-ui, sans-serif;
+    font-family: system-ui, 'Segoe UI', Roboto, sans-serif;
 }
 body {
     background: #eef2f7;
@@ -8,7 +8,7 @@ body {
     padding: 20px;
 }
 .container {
-    max-width: 1200px;
+    max-width: 1300px;
     margin: 0 auto;
     background: white;
     border-radius: 24px;
@@ -59,10 +59,15 @@ button:hover {
     color: red;
     margin-top: 10px;
 }
-/* Сетка карточек курсантов */
+.hint {
+    font-size: 0.8rem;
+    color: #666;
+    text-align: center;
+}
+/* Сетка курсантов */
 .cadets-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
     gap: 16px;
     margin: 20px 0;
 }
@@ -73,26 +78,30 @@ button:hover {
     padding: 16px;
     cursor: pointer;
     transition: 0.2s;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
 }
 .cadet-card:hover {
     background: #e6f0ff;
     transform: translateY(-3px);
-    border-color: #1e4663;
 }
 .cadet-card.selected {
     background: #d4e4ff;
     border-color: #1e4663;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
 }
 .cadet-card h4 {
     margin: 0 0 8px 0;
-    color: #1e4663;
 }
 .cadet-card p {
     margin: 4px 0;
-    font-size: 0.9rem;
-    color: #2c3e50;
+    font-size: 0.85rem;
+}
+.cadet-card .badge {
+    background: #1e4663;
+    color: white;
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    display: inline-block;
+    margin-top: 5px;
 }
 /* Таблицы */
 table {
@@ -104,6 +113,7 @@ th, td {
     text-align: left;
     padding: 8px;
     border-bottom: 1px solid #ddd;
+    vertical-align: middle;
 }
 th {
     background: #1e4663;
@@ -115,14 +125,41 @@ th {
     padding: 4px 8px;
     border-radius: 20px;
     margin-right: 5px;
-    font-size: 0.85rem;
 }
-hr {
-    margin: 20px 0;
-}
+/* Формы */
 .add-cadet-form, .add-grade-form {
     background: #f4f9fe;
     padding: 15px;
     border-radius: 20px;
     margin: 15px 0;
+}
+/* Модальное окно */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.5);
+}
+.modal-content {
+    background-color: #fff;
+    margin: 10% auto;
+    padding: 20px;
+    border-radius: 24px;
+    width: 90%;
+    max-width: 500px;
+}
+.close {
+    float: right;
+    font-size: 28px;
+    cursor: pointer;
+}
+#tasksList div {
+    border: 1px solid #ddd;
+    padding: 8px;
+    margin: 8px 0;
+    border-radius: 12px;
 }

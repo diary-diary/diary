@@ -1,40 +1,158 @@
 // ============================================
-// НАСТРОЙКИ JSONBIN - ЗАМЕНИТЕ НА ВАШИ ДАННЫЕ!
-// ============================================
-const BIN_ID = "6a2bbc91da38895dfeb36372";      // СЮДА ВСТАВЬТЕ BIN ID
-const API_KEY = "$2a$10$UmQWOYXwBDWudmpUaDxPIun6hLcIHC/xzlJ3GzKKDzLRDsEvMPPC6";    // СЮДА ВСТАВЬТЕ API KEY
+// НАСТРОЙКИ - НИЧЕГО ВВОДИТЬ НЕ НАДО!
+// Репозиторий определяется автоматически
 // ============================================
 
-const API_URL = `https://api.jsonbin.io/v3/b/${BIN_ID}`;
+// Автоматически получаем URL репозитория из текущей страницы
+function getRepoInfo() {
+    const url = window.location.href;
+    // Для GitHub Pages: https://username.github.io/repo-name/
+    const match = url.match(/https:\/\/([^.]+)\.github\.io\/([^\/]+)/);
+    if (match) {
+        return {
+            owner: match[1],
+            repo: match[2],
+            path: 'data.json'
+        };
+    }
+    // Если запущено локально - используем тестовые данные
+    return null;
+}
+
+const repo = getRepoInfo();
+const API_URL = repo ? `https://api.github.com/repos/${repo.owner}/${repo.repo}/contents/${repo.path}` : null;
+const RAW_URL = repo ? `https://raw.githubusercontent.com/${repo.owner}/${repo.repo}/main/${repo.path}` : null;
 
 let appData = null;
 let currentUser = null;
 let currentTeacherCadetId = null;
 const subjects = ["Военно Тактическая Подготовка", "Русский язык", "Юридический"];
 
+// Обновление статуса синхронизации
+function setSyncStatus(status, message) {
+    const el = document.getElementById('syncStatus');
+    if (!el) return;
+    el.textContent = message;
+    el.className = status;
+    setTimeout(() => {
+        if (document.getElementById('syncStatus').className === status) {
+            document.getElementById('syncStatus').className = '';
+            document.getElementById('syncStatus').textContent = '✅ Синхронизировано';
+        }
+    }, 2000);
+}
+
+// Загрузка данных из GitHub
 async function loadData() {
+    if (!RAW_URL) {
+        console.log('Локальный режим - используем localStorage');
+        const stored = localStorage.getItem('diary_local');
+        if (stored) {
+            appData = JSON.parse(stored);
+        } else {
+            appData = getDefaultData();
+        }
+        setSyncStatus('synced', '💾 Локальный режим');
+        return true;
+    }
+
     try {
-        const res = await fetch(API_URL, { headers: { "X-Master-Key": API_KEY } });
-        const data = await res.json();
-        appData = data.record;
-        if (!appData.users) {
-            const def = { users: [], nextId: 1 };
-            await fetch(API_URL, { method: 'PUT', headers: { "Content-Type": "application/json", "X-Master-Key": API_KEY }, body: JSON.stringify(def) });
-            appData = def;
+        setSyncStatus('syncing', '🔄 Загрузка...');
+        const response = await fetch(RAW_URL + '?t=' + Date.now());
+        if (response.ok) {
+            appData = await response.json();
+            setSyncStatus('synced', '✅ Синхронизировано');
+            return true;
+        } else if (response.status === 404) {
+            // Файла нет - создаём
+            appData = getDefaultData();
+            await saveData();
+            setSyncStatus('synced', '✅ Данные созданы');
+            return true;
+        }
+        throw new Error('Ошибка загрузки');
+    } catch (error) {
+        console.error('Ошибка загрузки:', error);
+        setSyncStatus('error-sync', '⚠️ Офлайн-режим');
+        // В офлайн-режиме используем localStorage
+        const stored = localStorage.getItem('diary_cache');
+        if (stored) {
+            appData = JSON.parse(stored);
+        } else {
+            appData = getDefaultData();
         }
         return true;
-    } catch(e) {
-        document.getElementById('loginError').innerText = 'Ошибка: проверьте интернет и ключи JSONbin';
+    }
+}
+
+// Сохранение данных в GitHub
+async function saveData() {
+    // Сохраняем кэш в localStorage
+    localStorage.setItem('diary_cache', JSON.stringify(appData));
+    
+    if (!API_URL) {
+        localStorage.setItem('diary_local', JSON.stringify(appData));
+        setSyncStatus('synced', '💾 Сохранено локально');
+        return true;
+    }
+
+    try {
+        // Сначала получаем SHA текущего файла (для обновления)
+        const getResponse = await fetch(API_URL, {
+            headers: { 'Accept': 'application/vnd.github.v3+json' }
+        });
+        
+        let sha = null;
+        if (getResponse.ok) {
+            const fileInfo = await getResponse.json();
+            sha = fileInfo.sha;
+        }
+        
+        // Подготавливаем содержимое в base64
+        const content = btoa(unescape(encodeURIComponent(JSON.stringify(appData, null, 2))));
+        
+        const body = {
+            message: `Обновление данных ${new Date().toLocaleString()}`,
+            content: content,
+            branch: 'main'
+        };
+        if (sha) body.sha = sha;
+        
+        const response = await fetch(API_URL, {
+            method: 'PUT',
+            headers: {
+                'Accept': 'application/vnd.github.v3+json',
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(body)
+        });
+        
+        if (response.ok) {
+            setSyncStatus('synced', '✅ Сохранено на GitHub');
+            return true;
+        } else {
+            throw new Error('Ошибка сохранения');
+        }
+    } catch (error) {
+        console.error('Ошибка сохранения:', error);
+        setSyncStatus('error-sync', '⚠️ Сохранено локально');
+        localStorage.setItem('diary_local', JSON.stringify(appData));
         return false;
     }
 }
 
-async function saveData() {
-    await fetch(API_URL, {
-        method: 'PUT',
-        headers: { "Content-Type": "application/json", "X-Master-Key": API_KEY },
-        body: JSON.stringify(appData)
-    });
+// Начальные данные
+function getDefaultData() {
+    return {
+        users: [
+            { id: "t1", login: "teacher", password: "123", role: "teacher", name: "Преподаватель" },
+            { id: "t2", login: "teacher2", password: "123", role: "teacher", name: "Преподаватель 2" },
+            { id: "c1", login: "cadet", password: "123", role: "cadet", name: "Иван", surname: "Иванов",
+              grades: subjects.map(s => ({ subject: s, grades: [5,4,5] })),
+              tasks: [] }
+        ],
+        nextId: 2
+    };
 }
 
 function getCadet(id) { return appData.users.find(u => u.id === id && u.role === 'cadet'); }
@@ -106,8 +224,9 @@ function avg(grades) {
 async function renderCadetsGrid() {
     const grid = document.getElementById('cadetsGrid');
     if (!grid) return;
+    const cadets = getCadets();
     grid.innerHTML = '';
-    for (const cadet of getCadets()) {
+    for (const cadet of cadets) {
         let allGrades = [];
         cadet.grades.forEach(s => allGrades.push(...s.grades));
         const totalAvg = allGrades.length ? avg(allGrades) : '—';
@@ -115,7 +234,7 @@ async function renderCadetsGrid() {
         const lastGrades = allGrades.slice(-3).join(', ');
         const card = document.createElement('div');
         card.className = 'cadet-card' + (currentTeacherCadetId === cadet.id ? ' selected' : '');
-        card.innerHTML = `<h4>${cadet.surname} ${cadet.name}</h4><p>📋 ${cadet.login}</p><p>⭐ Средний балл: ${totalAvg}</p><p>⚠️ Долгов: ${unresolved}</p><div class="grades-preview">Оценки: ${lastGrades || 'нет'}</div><div class="badge">Всего: ${allGrades.length}</div>`;
+        card.innerHTML = `<h4>${cadet.surname} ${cadet.name}</h4><p>📋 ${cadet.login}</p><p>⭐ Средний балл: ${totalAvg}</p><p>⚠️ Долгов: ${unresolved}</p><div class="grades-preview">${lastGrades || 'нет'}</div><div class="badge">${allGrades.length}</div>`;
         card.onclick = () => {
             document.querySelectorAll('.cadet-card').forEach(c => c.classList.remove('selected'));
             card.classList.add('selected');
@@ -245,7 +364,7 @@ function startAutoRefresh() {
                 }
             }
         }
-    }, 3000);
+    }, 5000);
 }
 
 document.addEventListener('DOMContentLoaded', async () => {

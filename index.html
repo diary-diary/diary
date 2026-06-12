@@ -55,6 +55,7 @@
             border-radius: 48px;
             padding: 32px 36px;
             box-shadow: 0 30px 50px rgba(0,0,0,0.25);
+            animation: fadeIn 0.3s ease;
         }
         .panel-header {
             display: flex;
@@ -165,7 +166,7 @@
         .grade-badge.normal { background: linear-gradient(145deg, #e0e7ff, #d1d9ff); color: #1e3a5f; }
         .grade-badge.absent { background: linear-gradient(145deg, #fee2e2, #fecaca); color: #b91c1c; }
         .grade-badge.task { background: linear-gradient(145deg, #fef3c7, #fde68a); color: #92400e; }
-        .grade-badge:hover { transform: scale(1.05); }
+        .grade-badge:hover { transform: scale(1.05); filter: brightness(0.95); }
         .grade-control {
             display: flex;
             gap: 8px;
@@ -211,6 +212,7 @@
             border-radius: 40px;
             font-size: 0.75rem;
             z-index: 1000;
+            transition: 0.3s;
         }
         .status.syncing { background: #f59e0b; }
         .status.synced { background: #22c55e; }
@@ -245,7 +247,7 @@
             <div id="loginError" class="error"></div>
             <div style="margin-top:28px; font-size:0.7rem; color:#6c84a0;">
                 🔐 Преподаватель: <strong>teacher</strong> / <strong>123</strong><br>
-                📡 Данные синхронизируются через GitHub
+                📡 Данные синхронизируются через GitHub (обновление каждые 2.5 сек)
             </div>
         </div>
     </div>
@@ -272,7 +274,7 @@
                     <thead id="tableHeader">
                         <tr><th>👤 Курсант</th><th>Военно Тактическая</th><th>Русский язык</th><th>Юридический</th><th>📊 Средний</th><th></th></tr>
                     </thead>
-                    <tbody id="tableBody"><tr><td colspan="6" class="empty-row">Загрузка...</td></tr></tbody>
+                    <tbody id="tableBody"><td><td colspan="6" class="empty-row">Загрузка...</td></tr></tbody>
                 </table>
             </div>
 
@@ -281,7 +283,7 @@
                 <span><div class="badge-small" style="background:#fecaca;"></div> ❌ Не пришёл</span>
                 <span><div class="badge-small" style="background:#fde68a;"></div> 📋 Отработка</span>
                 <span>🔴 Клик по оценке — удаление</span>
-                <span>🔄 Данные автоматически синхронизируются</span>
+                <span>🔄 Автообновление раз в 2.5 секунды</span>
             </div>
         </div>
     </div>
@@ -289,7 +291,7 @@
 
 <script>
     // ============================================
-    // СИНХРОНИЗАЦИЯ ЧЕРЕЗ GITHUB
+    // СИНХРОНИЗАЦИЯ ЧЕРЕЗ GITHUB (обновление 2.5 сек)
     // ============================================
     
     // ⚠️ ВАЖНО: Замените на ВАШИ данные из GitHub!
@@ -304,30 +306,42 @@
     let appData = null;
     let currentUser = null;
     let syncTimer = null;
+    let isUpdating = false;
     
     function setStatus(type, text) {
         const el = document.getElementById('status');
+        if (!el) return;
         el.textContent = text;
         el.className = `status ${type}`;
         setTimeout(() => {
-            if (document.getElementById('status').className === `status ${type}`) {
-                el.className = 'status';
-                el.textContent = '✨ Готово';
+            if (document.getElementById('status')?.className === `status ${type}`) {
+                const st = document.getElementById('status');
+                if (st) {
+                    st.className = 'status';
+                    st.textContent = '✨ Готово';
+                }
             }
-        }, 2000);
+        }, 1500);
     }
     
     // Загрузка данных с GitHub
     async function loadFromGitHub() {
+        if (isUpdating) return false;
+        isUpdating = true;
         try {
-            setStatus('syncing', '🔄 Синхронизация...');
             const res = await fetch(GITHUB_RAW + '?t=' + Date.now());
             if (res.ok) {
-                appData = await res.json();
-                setStatus('synced', '✅ Данные загружены');
+                const newData = await res.json();
+                // Проверяем, изменились ли данные
+                const oldStr = JSON.stringify(appData);
+                const newStr = JSON.stringify(newData);
+                appData = newData;
+                if (oldStr !== newStr && currentUser) {
+                    setStatus('synced', '🔄 Обновлено');
+                    renderTeacherTable();
+                }
                 return true;
             } else if (res.status === 404) {
-                // Файла нет, создаём начальные данные
                 appData = {
                     users: [{ id: "t1", login: "teacher", password: "123", role: "teacher", name: "Преподаватель" }],
                     cadets: []
@@ -335,74 +349,56 @@
                 await saveToGitHub();
                 return true;
             }
-            throw new Error('Ошибка загрузки');
+            throw new Error('Ошибка');
         } catch (e) {
-            setStatus('error', '⚠️ Ошибка соединения');
-            // Пробуем загрузить из localStorage
+            setStatus('error', '⚠️ Ошибка');
             const local = localStorage.getItem('diary_backup');
-            if (local) {
+            if (local && !appData) {
                 appData = JSON.parse(local);
-                return true;
+            } else if (!appData) {
+                appData = {
+                    users: [{ id: "t1", login: "teacher", password: "123", role: "teacher", name: "Преподаватель" }],
+                    cadets: []
+                };
             }
-            appData = {
-                users: [{ id: "t1", login: "teacher", password: "123", role: "teacher", name: "Преподаватель" }],
-                cadets: []
-            };
-            return true;
+            return false;
+        } finally {
+            isUpdating = false;
         }
     }
     
     // Сохранение на GitHub
     async function saveToGitHub() {
-        // Сохраняем резервную копию
+        if (!appData) return false;
         localStorage.setItem('diary_backup', JSON.stringify(appData));
-        
         try {
             const content = btoa(unescape(encodeURIComponent(JSON.stringify(appData, null, 2))));
-            
-            // Пробуем получить SHA файла
             let sha = null;
             const getRes = await fetch(GITHUB_API, { headers: { 'Accept': 'application/vnd.github.v3+json' } });
             if (getRes.ok) {
                 const info = await getRes.json();
                 sha = info.sha;
             }
-            
-            const body = {
-                message: `Обновление ${new Date().toLocaleString()}`,
-                content: content,
-                branch: 'main'
-            };
+            const body = { message: `Обновление ${new Date().toLocaleString()}`, content: content, branch: 'main' };
             if (sha) body.sha = sha;
-            
             const res = await fetch(GITHUB_API, {
                 method: 'PUT',
-                headers: { 
-                    'Accept': 'application/vnd.github.v3+json',
-                    'Content-Type': 'application/json'
-                },
+                headers: { 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
                 body: JSON.stringify(body)
             });
-            
             if (res.ok) {
-                setStatus('synced', '✅ Сохранено на GitHub');
+                setStatus('synced', '✅ Сохранено');
                 return true;
             }
-            throw new Error('Ошибка сохранения');
+            throw new Error('Ошибка');
         } catch (e) {
-            setStatus('error', '⚠️ Сохранено локально');
+            setStatus('error', '⚠️ Локально');
             return false;
         }
     }
     
-    // Автосохранение после каждого действия
-    async function autoSave() {
-        if (appData) {
-            await saveToGitHub();
-        }
-    }
+    async function autoSave() { if (appData) await saveToGitHub(); }
     
-    // Получить всех курсантов
     function getCadets() { return appData?.cadets || []; }
     function getCadetById(id) { return appData?.cadets.find(c => c.id === id); }
     function fullName(c) { return `${c.surname} ${c.name} ${c.patronymic}`.trim(); }
@@ -429,14 +425,12 @@
         return (sum / arr.length).toFixed(1);
     }
     
-    // Действия с данными (с автосохранением)
     async function addCadet(surname, name, patronymic) {
         let newId = "c"+Date.now();
         let gradesInit = {};
         SUBJECTS.forEach(s => gradesInit[s] = []);
         appData.cadets.push({ id:newId, surname, name, patronymic, grades: gradesInit });
         await autoSave();
-        return true;
     }
     
     async function deleteCadet(id) {
@@ -446,13 +440,12 @@
     
     async function addMark(cid, subj, markValue) {
         let c = getCadetById(cid);
-        if (!c) return false;
+        if (!c) return;
         let allowed = ['2','3','4','5','н','о'];
-        if (!allowed.includes(markValue)) return false;
+        if (!allowed.includes(markValue)) return;
         if (!c.grades[subj]) c.grades[subj] = [];
         c.grades[subj].push(markValue);
         await autoSave();
-        return true;
     }
     
     async function deleteMarkByIndex(cid, subj, index) {
@@ -460,9 +453,7 @@
         if (c && c.grades[subj] && c.grades[subj][index] !== undefined) {
             c.grades[subj].splice(index, 1);
             await autoSave();
-            return true;
         }
-        return false;
     }
     
     async function removeLastMark(cid, subj) {
@@ -470,9 +461,7 @@
         if (c && c.grades[subj]?.length) {
             c.grades[subj].pop();
             await autoSave();
-            return true;
         }
-        return false;
     }
     
     function getMarkDisplay(mark) {
@@ -487,10 +476,10 @@
         return 'normal';
     }
     
-    // Отрисовка таблицы
     function renderTeacherTable() {
         const thead = document.getElementById("tableHeader");
         const tbody = document.getElementById("tableBody");
+        if (!thead || !tbody) return;
         let cadets = getCadets();
         
         let headerHtml = `<tr><th>👤 Курсант</th>`;
@@ -528,7 +517,6 @@
                     badge.onclick = async (e) => {
                         e.stopPropagation();
                         await deleteMarkByIndex(cadet.id, subj, i);
-                        await loadFromGitHub();
                         renderTeacherTable();
                     };
                     marksDiv.appendChild(badge);
@@ -550,7 +538,6 @@
                 addBtn.className = 'action-btn add';
                 addBtn.onclick = async () => {
                     await addMark(cadet.id, subj, select.value);
-                    await loadFromGitHub();
                     renderTeacherTable();
                 };
                 let delLastBtn = document.createElement('button');
@@ -559,7 +546,6 @@
                 delLastBtn.onclick = async () => {
                     if (marks.length) {
                         await removeLastMark(cadet.id, subj);
-                        await loadFromGitHub();
                         renderTeacherTable();
                     }
                 };
@@ -579,7 +565,6 @@
             delCadetBtn.className = 'delete-cadet-btn';
             delCadetBtn.onclick = async () => {
                 await deleteCadet(cadet.id);
-                await loadFromGitHub();
                 renderTeacherTable();
             };
             actionCell.appendChild(delCadetBtn);
@@ -589,18 +574,20 @@
         }
     }
     
-    // Автообновление каждые 5 секунд
+    // АВТООБНОВЛЕНИЕ КАЖДЫЕ 2.5 СЕКУНДЫ
     function startAutoSync() {
         if (syncTimer) clearInterval(syncTimer);
         syncTimer = setInterval(async () => {
-            if (currentUser) {
+            if (currentUser && !isUpdating) {
+                const oldDataStr = JSON.stringify(appData);
                 await loadFromGitHub();
-                renderTeacherTable();
+                if (oldDataStr !== JSON.stringify(appData)) {
+                    renderTeacherTable();
+                }
             }
-        }, 5000);
+        }, 2500); // 2.5 секунды
     }
     
-    // Авторизация
     async function login(loginVal, pwd) {
         if (!appData) await loadFromGitHub();
         let user = appData.users.find(u => u.login === loginVal && u.password === pwd && u.role === 'teacher');
@@ -632,7 +619,6 @@
         let patronymic = document.getElementById('newPatronymic').value.trim();
         if (surname && name && patronymic) {
             await addCadet(surname, name, patronymic);
-            await loadFromGitHub();
             renderTeacherTable();
             document.getElementById('newSurname').value = '';
             document.getElementById('newName').value = '';

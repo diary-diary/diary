@@ -1,0 +1,81 @@
+* {
+    box-sizing: border-box;
+    font-family: system-ui, sans-serif;
+}
+body {
+    background: #eef2f7;
+    margin: 0;
+    padding: 20px;
+}
+.container {
+    max-width: 1100px;
+    margin: 0 auto;
+    background: white;
+    border-radius: 24px;
+    padding: 20px 30px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+h1, h2, h3 {
+    color: #1e4663;
+}
+.card {
+    max-width: 400px;
+    margin: 30px auto;
+    background: #f9fafc;
+    padding: 20px;
+    border-radius: 20px;
+}
+label {
+    display: block;
+    margin-top: 12px;
+    font-weight: bold;
+}
+input, select, button {
+    padding: 8px 12px;
+    margin-top: 5px;
+    margin-right: 8px;
+    border-radius: 12px;
+    border: 1px solid #ccc;
+}
+button {
+    background: #1e4663;
+    color: white;
+    border: none;
+    cursor: pointer;
+    transition: 0.2s;
+}
+button:hover {
+    background: #0f2e46;
+}
+.logout {
+    background: #b33;
+    float: right;
+}
+.error {
+    color: red;
+    margin-top: 10px;
+}
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 15px 0;
+}
+th, td {
+    text-align: left;
+    padding: 8px;
+    border-bottom: 1px solid #ddd;
+}
+th {
+    background: #1e4663;
+    color: white;
+}
+.grade {
+    display: inline-block;
+    background: #e0e7ff;
+    padding: 4px 8px;
+    border-radius: 20px;
+    margin-right: 5px;
+}
+hr {
+    margin: 20px 0;
+}

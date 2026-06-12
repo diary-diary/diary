@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Электронный дневник - Вход</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <!-- ФОРМА ВХОДА (показывается всегда первой) -->
+        <div id="login-form">
+            <h1>📓 Электронный дневник</h1>
+            <div class="card">
+                <h2>Авторизация</h2>
+                <label>Логин:</label>
+                <input type="text" id="login" placeholder="teacher или cadet">
+                <label>Пароль:</label>
+                <input type="password" id="password" placeholder="123">
+                <button id="doLogin">Войти</button>
+                <div id="errorMsg" class="error"></div>
+            </div>
+        </div>
+
+        <!-- ПАНЕЛЬ ПРЕПОДАВАТЕЛЯ (скрыта) -->
+        <div id="teacherPanel" style="display: none;">
+            <h1>👨‍🏫 Панель преподавателя</h1>
+            <button id="logoutTeacher" class="logout">Выйти</button>
+            <hr>
+            <h3>Добавить курсанта</h3>
+            <input type="text" id="newName" placeholder="Имя">
+            <input type="text" id="newSurname" placeholder="Фамилия">
+            <input type="text" id="newClass" placeholder="Класс">
+            <input type="text" id="newLogin" placeholder="Логин">
+            <input type="password" id="newPass" placeholder="Пароль">
+            <button id="addCadetBtn">➕ Добавить</button>
+
+            <h3>Список курсантов</h3>
+            <select id="cadetSelect"></select>
+            <button id="loadGradesBtn">Загрузить оценки</button>
+
+            <div id="gradesBlock" style="display: none;">
+                <h2 id="selectedCadetName"></h2>
+                <table id="gradesTable">
+                    <thead><tr><th>Предмет</th><th>Оценки</th><th>Средний балл</th><th>Действие</th></tr></thead>
+                    <tbody id="gradesBody"></tbody>
+                </table>
+                <div>
+                    <select id="subjectForGrade">
+                        <option>Военно Тактическая Подготовка</option>
+                        <option>Русский язык</option>
+                        <option>Юридический</option>
+                    </select>
+                    <input type="number" id="newGrade" min="2" max="5" placeholder="2-5">
+                    <button id="addGradeBtn">Поставить оценку</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ПАНЕЛЬ КУРСАНТА (скрыта) -->
+        <div id="cadetPanel" style="display: none;">
+            <h1>📘 Дневник курсанта</h1>
+            <button id="logoutCadet" class="logout">Выйти</button>
+            <div id="cadetInfo"></div>
+            <table id="cadetGrades">
+                <thead><tr><th>Предмет</th><th>Оценки</th><th>Средний балл</th></tr></thead>
+                <tbody id="cadetGradesBody"></tbody>
+            </table>
+        </div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>

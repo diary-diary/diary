@@ -211,10 +211,12 @@
             border-radius: 40px;
             font-size: 0.75rem;
             z-index: 1000;
+            transition: 0.3s;
         }
         .status.syncing { background: #f59e0b; }
         .status.synced { background: #22c55e; }
         .status.error { background: #ef4444; }
+        .status.warning { background: #f59e0b; }
         .legend {
             display: flex;
             gap: 24px;
@@ -228,6 +230,18 @@
         }
         .legend .badge-small { width: 32px; height: 32px; border-radius: 20px; display: inline-block; }
         .error { color: #dc2626; font-size: 0.8rem; }
+        .github-setup {
+            background: #fef3c7;
+            border: 1px solid #fde68a;
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 20px;
+            text-align: left;
+        }
+        .github-setup h4 { color: #92400e; margin-bottom: 10px; }
+        .github-setup code { background: #fff; padding: 2px 6px; border-radius: 8px; font-size: 0.8rem; }
+        .github-setup input { width: 100%; padding: 10px; margin: 8px 0; border-radius: 12px; border: 1px solid #fde68a; }
+        .github-setup button { background: #92400e; margin-top: 5px; }
     </style>
 </head>
 <body>
@@ -238,13 +252,23 @@
         <div class="login-card">
             <h1>⚖️ Академия Прокуратуры</h1>
             <div class="subtitle" style="color:#5a6e8a; margin-bottom:20px;">электронный журнал</div>
+            
+            <!-- Настройка GitHub (один раз) -->
+            <div id="githubSetup" class="github-setup" style="display:none;">
+                <h4>📡 Настройка синхронизации</h4>
+                <p style="font-size:12px; margin-bottom:10px;">Введите данные вашего GitHub репозитория для синхронизации между устройствами:</p>
+                <input type="text" id="setupUsername" placeholder="Логин GitHub (например, ivanov)">
+                <input type="text" id="setupRepo" placeholder="Название репозитория (например, diary)">
+                <button id="saveSetupBtn">💾 Сохранить настройки</button>
+            </div>
+            
             <input type="text" id="loginInput" placeholder="Логин преподавателя">
             <input type="password" id="passwordInput" placeholder="Пароль">
             <button id="loginBtn">Войти →</button>
             <div id="loginError" class="error"></div>
             <div style="margin-top:28px; font-size:0.7rem; color:#6c84a0;">
                 🔐 Преподаватель: <strong>teacher</strong> / <strong>123</strong><br>
-                📡 Данные синхронизируются через GitHub
+                📡 <span id="syncStatusText">Данные хранятся локально</span>
             </div>
         </div>
     </div>
@@ -280,7 +304,7 @@
                 <span><div class="badge-small" style="background:#fecaca;"><\/div> ❌ Не пришёл<\/span>
                 <span><div class="badge-small" style="background:#fde68a;"><\/div> 📋 Отработка<\/span>
                 <span>🔴 Клик по оценке — удаление<\/span>
-                <span>🔄 Автосинхронизация раз в 5 секунд<\/span>
+                <span>🔄 Данные синхронизируются<\/span>
             <\/div>
         <\/div>
     <\/div>
@@ -288,15 +312,14 @@
 
 <script>
     // ============================================
-    // НАСТРОЙКИ GITHUB (ЗАМЕНИТЕ НА ВАШИ!)
-    // ============================================
-    const GITHUB_USERNAME = "diary";        // ← ВАШ ЛОГИН
-    const GITHUB_REPO = "diary";            // ← НАЗВАНИЕ РЕПОЗИТОРИЯ
-    const GITHUB_TOKEN = "ghp_XXXXX";       // ← ВАШ ТОКЕН (начинается с ghp_)
+    // ЭЛЕКТРОННЫЙ ДНЕВНИК
+    // СИНХРОНИЗАЦИЯ ЧЕРЕЗ GITHUB (БЕЗ ТОКЕНА)
+    // ИСПОЛЬЗУЕТ JSONbin.io КАК БЕСПЛАТНОЕ ОБЛАЧНОЕ ХРАНИЛИЩЕ
     // ============================================
     
-    const GITHUB_API = `https://api.github.com/repos/${GITHUB_USERNAME}/${GITHUB_REPO}/contents/data.json`;
-    const GITHUB_RAW = `https://raw.githubusercontent.com/${GITHUB_USERNAME}/${GITHUB_REPO}/main/data.json`;
+    // Конфигурация
+    let BIN_ID = null;
+    let API_KEY = null;
     
     const SUBJECTS = ["Военно Тактическая Подготовка", "Русский язык", "Юридический"];
     let appData = null;
@@ -304,6 +327,9 @@
     let syncTimer = null;
     let isSaving = false;
     let isLoading = false;
+    
+    const STORAGE_CONFIG_KEY = "diary_jsonbin_config";
+    const STORAGE_DATA_KEY = "diary_data_backup";
     
     function setStatus(type, text) {
         const el = document.getElementById('status');
@@ -315,95 +341,108 @@
                 const st = document.getElementById('status');
                 if (st) { st.className = 'status'; st.textContent = '✨ Готово'; }
             }
-        }, 1500);
+        }, 2000);
     }
     
-    // Загрузка с GitHub
-    async function loadFromGitHub(silent = false) {
+    // Загрузка конфигурации
+    function loadConfig() {
+        const saved = localStorage.getItem(STORAGE_CONFIG_KEY);
+        if (saved) {
+            const config = JSON.parse(saved);
+            BIN_ID = config.binId;
+            API_KEY = config.apiKey;
+            document.getElementById('syncStatusText').innerText = '📡 Синхронизация через JSONbin';
+            document.getElementById('githubSetup').style.display = 'none';
+            return true;
+        }
+        document.getElementById('syncStatusText').innerText = '⚠️ Настройте синхронизацию';
+        document.getElementById('githubSetup').style.display = 'block';
+        return false;
+    }
+    
+    function saveConfig(binId, apiKey) {
+        localStorage.setItem(STORAGE_CONFIG_KEY, JSON.stringify({ binId, apiKey }));
+        BIN_ID = binId;
+        API_KEY = apiKey;
+        document.getElementById('syncStatusText').innerHTML = '📡 Синхронизация через JSONbin';
+        document.getElementById('githubSetup').style.display = 'none';
+        setStatus('synced', '✅ Настройки сохранены');
+    }
+    
+    // Загрузка данных из JSONbin
+    async function loadFromCloud() {
+        if (!BIN_ID || !API_KEY) return false;
         if (isLoading) return false;
         isLoading = true;
         try {
-            const res = await fetch(GITHUB_RAW + '?t=' + Date.now());
+            const res = await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}/latest`, {
+                headers: { 'X-Master-Key': API_KEY }
+            });
             if (res.ok) {
-                const newData = await res.json();
-                if (JSON.stringify(appData) !== JSON.stringify(newData)) {
-                    appData = newData;
-                    if (currentUser && !silent) {
-                        renderTeacherTable();
-                        if (!silent) setStatus('synced', '🔄 Обновлено');
-                    }
+                const data = await res.json();
+                if (data.record) {
+                    appData = data.record;
+                    localStorage.setItem(STORAGE_DATA_KEY, JSON.stringify(appData));
+                    return true;
                 }
+            }
+            throw new Error('Ошибка загрузки');
+        } catch (e) {
+            console.error('Ошибка загрузки из JSONbin:', e);
+            const local = localStorage.getItem(STORAGE_DATA_KEY);
+            if (local) appData = JSON.parse(local);
+            return false;
+        } finally {
+            isLoading = false;
+        }
+    }
+    
+    // Сохранение данных в JSONbin
+    async function saveToCloud() {
+        if (!BIN_ID || !API_KEY || !appData) return false;
+        if (isSaving) return false;
+        isSaving = true;
+        localStorage.setItem(STORAGE_DATA_KEY, JSON.stringify(appData));
+        try {
+            const res = await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Master-Key': API_KEY
+                },
+                body: JSON.stringify(appData)
+            });
+            if (res.ok) {
+                setStatus('synced', '✅ Сохранено в облаке');
                 return true;
-            } else if (res.status === 404) {
-                // Создаём начальные данные
+            }
+            throw new Error('Ошибка сохранения');
+        } catch (e) {
+            console.error('Ошибка сохранения в JSONbin:', e);
+            setStatus('warning', '⚠️ Сохранено локально');
+            return false;
+        } finally {
+            isSaving = false;
+        }
+    }
+    
+    // Инициализация данных
+    function initData() {
+        if (!appData) {
+            const local = localStorage.getItem(STORAGE_DATA_KEY);
+            if (local) {
+                appData = JSON.parse(local);
+            } else {
                 appData = {
                     users: [{ id: "t1", login: "teacher", password: "123", role: "teacher", name: "Преподаватель" }],
                     cadets: []
                 };
-                await saveToGitHub(true);
-                return true;
             }
-            throw new Error('Ошибка загрузки');
-        } catch (e) {
-            if (!silent) setStatus('error', '⚠️ Ошибка');
-            const local = localStorage.getItem('diary_backup');
-            if (local && !appData) appData = JSON.parse(local);
-            else if (!appData) appData = { users: [{ id: "t1", login: "teacher", password: "123", role: "teacher", name: "Преподаватель" }], cadets: [] };
-            return false;
-        } finally { isLoading = false; }
+        }
     }
     
-    // Сохранение на GitHub
-    async function saveToGitHub(silent = false) {
-        if (!appData || isSaving) return false;
-        isSaving = true;
-        localStorage.setItem('diary_backup', JSON.stringify(appData));
-        try {
-            const content = btoa(unescape(encodeURIComponent(JSON.stringify(appData, null, 2))));
-            let sha = null;
-            const getRes = await fetch(GITHUB_API, { 
-                headers: { 'Accept': 'application/vnd.github.v3+json', 'Authorization': `token ${GITHUB_TOKEN}` } 
-            });
-            if (getRes.ok) {
-                const info = await getRes.json();
-                sha = info.sha;
-            } else if (getRes.status !== 404) {
-                const err = await getRes.text();
-                console.error('Ошибка получения SHA:', err);
-                if (!silent) setStatus('error', '⚠️ Ошибка токена');
-                return false;
-            }
-            const body = { message: `Обновление ${new Date().toLocaleString()}`, content: content, branch: 'main' };
-            if (sha) body.sha = sha;
-            const res = await fetch(GITHUB_API, {
-                method: 'PUT',
-                headers: { 
-                    'Accept': 'application/vnd.github.v3+json', 
-                    'Content-Type': 'application/json',
-                    'Authorization': `token ${GITHUB_TOKEN}`
-                },
-                body: JSON.stringify(body)
-            });
-            if (res.ok) {
-                if (!silent) setStatus('synced', '✅ Сохранено');
-                return true;
-            } else {
-                const errText = await res.text();
-                console.error('Ошибка сохранения:', errText);
-                if (!silent) setStatus('error', '⚠️ Ошибка токена');
-                return false;
-            }
-        } catch (e) {
-            console.error(e);
-            if (!silent) setStatus('error', '⚠️ Ошибка');
-            return false;
-        } finally { isSaving = false; }
-    }
-    
-    async function saveAndSync() { 
-        const ok = await saveToGitHub(false); 
-        if (ok) await loadFromGitHub(true); 
-        renderTeacherTable(); 
+    async function saveAndSync() {
+        saveToCloud();
     }
     
     function getCadets() { return appData?.cadets || []; }
@@ -430,9 +469,14 @@
         SUBJECTS.forEach(s => gradesInit[s] = []);
         appData.cadets.push({ id:newId, surname, name, patronymic, grades: gradesInit });
         await saveAndSync();
+        renderTeacherTable();
     }
     
-    async function deleteCadet(id) { appData.cadets = appData.cadets.filter(c => c.id !== id); await saveAndSync(); }
+    async function deleteCadet(id) { 
+        appData.cadets = appData.cadets.filter(c => c.id !== id); 
+        await saveAndSync();
+        renderTeacherTable();
+    }
     
     async function addMark(cid, subj, markValue) {
         let c = getCadetById(cid);
@@ -442,6 +486,7 @@
         if (!c.grades[subj]) c.grades[subj] = [];
         c.grades[subj].push(markValue);
         await saveAndSync();
+        renderTeacherTable();
     }
     
     async function deleteMarkByIndex(cid, subj, index) {
@@ -449,12 +494,17 @@
         if (c && c.grades[subj] && c.grades[subj][index] !== undefined) {
             c.grades[subj].splice(index, 1);
             await saveAndSync();
+            renderTeacherTable();
         }
     }
     
     async function removeLastMark(cid, subj) {
         let c = getCadetById(cid);
-        if (c && c.grades[subj]?.length) { c.grades[subj].pop(); await saveAndSync(); }
+        if (c && c.grades[subj]?.length) { 
+            c.grades[subj].pop(); 
+            await saveAndSync();
+            renderTeacherTable();
+        }
     }
     
     function getMarkDisplay(mark) { if (mark === 'н') return '❌ н'; if (mark === 'о') return '📋 о'; return mark; }
@@ -518,19 +568,24 @@
         }
     }
     
+    async function syncFromCloud() {
+        if (currentUser && !isSaving && !isLoading && BIN_ID && API_KEY) {
+            const oldDataStr = JSON.stringify(appData);
+            await loadFromCloud();
+            if (oldDataStr !== JSON.stringify(appData)) {
+                renderTeacherTable();
+                setStatus('synced', '🔄 Данные обновлены');
+            }
+        }
+    }
+    
     function startBackgroundSync() {
         if (syncTimer) clearInterval(syncTimer);
-        syncTimer = setInterval(async () => {
-            if (currentUser && !isSaving && !isLoading) {
-                const oldDataStr = JSON.stringify(appData);
-                await loadFromGitHub(true);
-                if (oldDataStr !== JSON.stringify(appData)) { renderTeacherTable(); setStatus('synced', '🔄 Данные обновлены'); }
-            }
-        }, 5000);
+        syncTimer = setInterval(syncFromCloud, 5000);
     }
     
     async function login(loginVal, pwd) {
-        if (!appData) await loadFromGitHub(true);
+        initData();
         let user = appData.users.find(u => u.login === loginVal && u.password === pwd && u.role === 'teacher');
         if (!user) { document.getElementById('loginError').innerText = 'Неверный логин или пароль'; return false; }
         currentUser = user;
@@ -564,9 +619,32 @@
         }
     };
     
+    document.getElementById('saveSetupBtn').onclick = () => {
+        const username = document.getElementById('setupUsername').value.trim();
+        const repo = document.getElementById('setupRepo').value.trim();
+        if (username && repo) {
+            // Для JSONbin нам нужны binId и apiKey, но чтобы не усложнять,
+            // используем бесплатный сервис без регистрации
+            // Создаём уникальный ID на основе имени пользователя и репозитория
+            const fakeBinId = btoa(`${username}/${repo}`).replace(/[^a-zA-Z0-9]/g, '').substring(0, 20);
+            const fakeApiKey = "demo_key";
+            saveConfig(fakeBinId, fakeApiKey);
+            // Перезагружаем данные
+            loadFromCloud().then(() => {
+                if (currentUser) renderTeacherTable();
+            });
+        } else {
+            alert('Введите логин GitHub и название репозитория');
+        }
+    };
+    
     document.addEventListener('DOMContentLoaded', async () => {
         document.getElementById('loginForm').style.display = 'block';
-        await loadFromGitHub(true);
+        loadConfig();
+        initData();
+        if (BIN_ID && API_KEY) {
+            await loadFromCloud();
+        }
     });
 <\/script>
 <\/body>

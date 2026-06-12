@@ -473,7 +473,7 @@
                     <thead id="tableHeader">
                         <tr><th>👤 Курсант</th><th>Военно Тактическая</th><th>Русский язык</th><th>Юридический</th><th>📊 Средний</th><th></th></tr>
                     </thead>
-                    <tbody id="tableBody"><tr><td colspan="6" class="empty-row">Загрузка...</tr></td></tbody>
+                    <tbody id="tableBody"><tr><td colspan="6" class="empty-row">Загрузка...</td></tr></tbody>
                 </table>
             </div>
 
@@ -481,7 +481,8 @@
                 <span><div class="badge-small" style="background:#d1d9ff;"></div> Оценка (2-5)</span>
                 <span><div class="badge-small" style="background:#fecaca;"></div> ❌ Не пришёл</span>
                 <span><div class="badge-small" style="background:#fde68a;"></div> 📋 Отработка</span>
-                <span>🔴 <strong>Клик по оценке — мгновенное удаление</strong></span>
+                <span>🔴 <strong>Клик по оценке — удаление</strong> (без подтверждения)</span>
+                <span>🗑️ <strong>Клик по 🗑️</strong> — удаление курсанта</span>
             </div>
         </div>
     </div>
@@ -490,9 +491,9 @@
 <script>
     // ============================================
     // ЭЛЕКТРОННЫЙ ДНЕВНИК
-    // КЛИК ПО ОЦЕНКЕ → МГНОВЕННОЕ УДАЛЕНИЕ (БЕЗ ПОДТВЕРЖДЕНИЯ)
+    // ПОЛНОСТЬЮ БЕЗ УВЕДОМЛЕНИЙ (alert/confirm)
     // ============================================
-    const STORAGE_KEY = "diary_click_delete_no_confirm";
+    const STORAGE_KEY = "diary_no_alerts";
     const SUBJECTS = ["Военно Тактическая Подготовка", "Русский язык", "Юридический"];
     
     let appData = JSON.parse(localStorage.getItem(STORAGE_KEY));
@@ -511,7 +512,7 @@
         setTimeout(() => { 
             st.textContent = '✨ Готово';
             st.style.background = '#1e293b';
-        }, 1200);
+        }, 800);
     }
     
     function getCadets() { return appData.cadets || []; }
@@ -565,7 +566,7 @@
         return true;
     }
     
-    // МГНОВЕННОЕ УДАЛЕНИЕ (БЕЗ ПОДТВЕРЖДЕНИЯ)
+    // Мгновенное удаление оценки (без подтверждения)
     function deleteMarkByIndex(cid, subj, index) {
         let c = getCadetById(cid);
         if (c && c.grades[subj] && c.grades[subj][index] !== undefined) {
@@ -628,6 +629,7 @@
                 let marks = cadet.grades[subj] || [];
                 let td = document.createElement('td');
                 
+                // Список оценок (клик - удаление)
                 let marksDiv = document.createElement('div');
                 marksDiv.className = 'grades-list';
                 for (let i = 0; i < marks.length; i++) {
@@ -635,9 +637,7 @@
                     badge.className = `grade-badge ${getMarkClass(marks[i])}`;
                     badge.innerText = getMarkDisplay(marks[i]);
                     badge.style.cursor = 'pointer';
-                    badge.title = 'Кликните, чтобы удалить оценку';
-                    
-                    // УДАЛЕНИЕ БЕЗ ПОДТВЕРЖДЕНИЯ
+                    badge.title = 'Удалить';
                     badge.onclick = (e) => {
                         e.stopPropagation();
                         deleteMarkByIndex(cadet.id, subj, i);
@@ -647,6 +647,7 @@
                 }
                 td.appendChild(marksDiv);
                 
+                // Панель добавления
                 let controlDiv = document.createElement('div');
                 controlDiv.className = 'grade-control';
                 let select = document.createElement('select');
@@ -661,7 +662,7 @@
                 let addBtn = document.createElement('button');
                 addBtn.innerText = '+';
                 addBtn.className = 'action-btn add';
-                addBtn.title = 'Добавить новую отметку';
+                addBtn.title = 'Добавить';
                 addBtn.onclick = () => {
                     let val = select.value;
                     addMark(cadet.id, subj, val);
@@ -670,13 +671,11 @@
                 let delLastBtn = document.createElement('button');
                 delLastBtn.innerText = '🗑️';
                 delLastBtn.className = 'action-btn del-last';
-                delLastBtn.title = 'Удалить последнюю отметку';
+                delLastBtn.title = 'Удалить последнюю';
                 delLastBtn.onclick = () => {
                     if (marks.length) {
                         removeLastMark(cadet.id, subj);
                         renderTeacherTable();
-                    } else {
-                        alert('Нет отметок для удаления');
                     }
                 };
                 controlDiv.appendChild(select);
@@ -695,10 +694,8 @@
             delCadetBtn.className = 'delete-cadet-btn';
             delCadetBtn.title = 'Удалить курсанта';
             delCadetBtn.onclick = () => {
-                if (confirm(`Удалить курсанта ${fullName(cadet)} и все его оценки?`)) {
-                    deleteCadet(cadet.id);
-                    renderTeacherTable();
-                }
+                deleteCadet(cadet.id);
+                renderTeacherTable();
             };
             actionCell.appendChild(delCadetBtn);
             row.appendChild(avgCell);
@@ -734,16 +731,13 @@
         let surname = document.getElementById('newSurname').value.trim();
         let name = document.getElementById('newName').value.trim();
         let patronymic = document.getElementById('newPatronymic').value.trim();
-        if (!surname || !name || !patronymic) {
-            alert('Заполните Фамилию, Имя, Отчество');
-            return;
+        if (surname && name && patronymic) {
+            addCadet(surname, name, patronymic);
+            renderTeacherTable();
+            document.getElementById('newSurname').value = '';
+            document.getElementById('newName').value = '';
+            document.getElementById('newPatronymic').value = '';
         }
-        addCadet(surname, name, patronymic);
-        renderTeacherTable();
-        document.getElementById('newSurname').value = '';
-        document.getElementById('newName').value = '';
-        document.getElementById('newPatronymic').value = '';
-        alert('Курсант добавлен');
     };
     
     document.addEventListener('DOMContentLoaded', () => {

@@ -30,7 +30,6 @@
             -webkit-background-clip: text;
             background-clip: text;
             color: transparent;
-            margin-bottom: 8px;
         }
         .login-card input {
             width: 100%;
@@ -40,7 +39,6 @@
             border-radius: 28px;
             font-size: 1rem;
         }
-        .login-card input:focus { outline: none; border-color: #2c5282; }
         .login-card button {
             width: 100%;
             padding: 15px;
@@ -238,7 +236,7 @@
             <div id="loginError" class="error"></div>
             <div style="margin-top: 30px; font-size: 0.7rem; color: #94a3b8;">
                 🔐 Преподаватель: <strong>teacher</strong> / <strong>123</strong><br>
-                🌐 Данные синхронизируются автоматически между всеми устройствами
+                🌐 Синхронизация через GitHub (обновление 5 сек)
             </div>
         </div>
     </div>
@@ -266,7 +264,7 @@
                         <tr><th>👤 ФИО курсанта</th><th>Военно Тактическая Подготовка</th><th>Русский язык</th><th>Юридический</th><th>📊 Средний</th><th>⚙️</th></tr>
                     </thead>
                     <tbody id="tableBody">
-                        <tr><td colspan="6" class="empty-row">📭 Загрузка...<\/td><\/tr>
+                        <td><td colspan="6" class="empty-row">📭 Загрузка...<\/td><\/tr>
                     </tbody>
                 </table>
             </div>
@@ -284,15 +282,15 @@
 
 <script>
     // ============================================
-    // ЭЛЕКТРОННЫЙ ДНЕВНИК
-    // АВТОМАТИЧЕСКАЯ СИНХРОНИЗАЦИЯ ЧЕРЕЗ JSONbin
-    // НИКАКИХ НАСТРОЕК НЕ ТРЕБУЕТСЯ!
+    // НАСТРОЙКИ GITHUB - ВСТАВЬТЕ ВАШ ТОКЕН!
+    // ============================================
+    const GITHUB_USERNAME = "diary";                    // Ваш логин на GitHub
+    const GITHUB_REPO = "diary-diary";                        // Название репозитория
+    const GITHUB_TOKEN = "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";                   // ← ВСТАВЬТЕ ВАШ ТОКЕН (ghp_...)
     // ============================================
     
-    // УНИКАЛЬНЫЙ ID ДЛЯ ВАШЕГО ДНЕВНИКА (можно изменить на любой)
-    const BIN_ID = "67c0a5f8e41b4d34e47e1a2b";
-    const API_KEY = "$2a$10$X9qR8sT1uV5wX6yZ7aB8cD";
-    const API_URL = `https://api.jsonbin.io/v3/b/${BIN_ID}`;
+    const API_URL = `https://api.github.com/repos/${GITHUB_USERNAME}/${GITHUB_REPO}/contents/data.json`;
+    const RAW_URL = `https://raw.githubusercontent.com/${GITHUB_USERNAME}/${GITHUB_REPO}/main/data.json`;
     
     const SUBJECTS = ["Военно Тактическая Подготовка", "Русский язык", "Юридический"];
     let appData = null;
@@ -313,60 +311,66 @@
         }, 2000);
     }
     
-    // Загрузка данных из облака
-    async function loadFromCloud() {
+    // Загрузка с GitHub
+    async function loadFromGitHub() {
         if (isSyncing) return false;
         isSyncing = true;
         try {
-            setStatus('syncing', '🔄 Синхронизация...');
-            const res = await fetch(`${API_URL}/latest`, {
-                headers: { 'X-Master-Key': API_KEY }
-            });
+            setStatus('syncing', '🔄 Загрузка...');
+            const res = await fetch(RAW_URL + '?t=' + Date.now());
             if (res.ok) {
-                const data = await res.json();
-                if (data.record) {
-                    appData = data.record;
-                    localStorage.setItem('diary_backup', JSON.stringify(appData));
-                    setStatus('synced', '✅ Синхронизировано');
-                    return true;
-                }
-            }
-            throw new Error('Ошибка');
-        } catch(e) {
-            setStatus('error', '⚠️ Офлайн режим');
-            const local = localStorage.getItem('diary_backup');
-            if (local) {
-                appData = JSON.parse(local);
-            } else {
+                appData = await res.json();
+                localStorage.setItem('diary_backup', JSON.stringify(appData));
+                setStatus('synced', '✅ Загружено');
+                return true;
+            } else if (res.status === 404) {
+                // Создаём начальные данные
                 appData = {
                     users: [{ id: "t1", login: "teacher", password: "123", role: "teacher", name: "Преподаватель" }],
                     cadets: []
                 };
+                await saveToGitHub();
+                return true;
             }
+            throw new Error('Ошибка');
+        } catch(e) {
+            setStatus('error', '⚠️ Ошибка');
+            const local = localStorage.getItem('diary_backup');
+            if (local) appData = JSON.parse(local);
+            else appData = { users: [{ id: "t1", login: "teacher", password: "123", role: "teacher" }], cadets: [] };
             return false;
         } finally {
             isSyncing = false;
         }
     }
     
-    // Сохранение в облако
-    async function saveToCloud() {
-        if (!appData || isSyncing) return false;
+    // Сохранение на GitHub
+    async function saveToGitHub() {
+        if (!appData) return false;
         localStorage.setItem('diary_backup', JSON.stringify(appData));
         try {
+            const content = btoa(unescape(encodeURIComponent(JSON.stringify(appData, null, 2))));
             let sha = null;
-            const getRes = await fetch(API_URL, { headers: { 'X-Master-Key': API_KEY } });
+            const getRes = await fetch(API_URL, { 
+                headers: { 'Authorization': `token ${GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json' } 
+            });
             if (getRes.ok) {
                 const info = await getRes.json();
-                sha = info.metadata?.parentId || null;
+                sha = info.sha;
             }
             const res = await fetch(API_URL, {
                 method: 'PUT',
                 headers: {
+                    'Authorization': `token ${GITHUB_TOKEN}`,
                     'Content-Type': 'application/json',
-                    'X-Master-Key': API_KEY
+                    'Accept': 'application/vnd.github.v3+json'
                 },
-                body: JSON.stringify(appData)
+                body: JSON.stringify({
+                    message: `Обновление ${new Date().toLocaleString()}`,
+                    content: content,
+                    sha: sha,
+                    branch: 'main'
+                })
             });
             if (res.ok) {
                 setStatus('synced', '✅ Сохранено');
@@ -374,15 +378,15 @@
             }
             return false;
         } catch(e) {
-            setStatus('error', '⚠️ Сохранено локально');
+            setStatus('error', '⚠️ Ошибка');
             return false;
         }
     }
     
     async function syncAndRender() {
-        if (currentUser) {
+        if (currentUser && !isSyncing) {
             const oldData = JSON.stringify(appData);
-            await loadFromCloud();
+            await loadFromGitHub();
             if (oldData !== JSON.stringify(appData)) {
                 renderTeacherTable();
             }
@@ -425,13 +429,13 @@
         let gradesInit = {};
         SUBJECTS.forEach(s => gradesInit[s] = []);
         appData.cadets.push({ id: newId, surname, name, patronymic, grades: gradesInit });
-        await saveToCloud();
+        await saveToGitHub();
         renderTeacherTable();
     }
     
     async function deleteCadet(id) {
         appData.cadets = appData.cadets.filter(c => c.id !== id);
-        await saveToCloud();
+        await saveToGitHub();
         renderTeacherTable();
     }
     
@@ -442,7 +446,7 @@
         if (!allowed.includes(markValue)) return;
         if (!c.grades[subj]) c.grades[subj] = [];
         c.grades[subj].push(markValue);
-        await saveToCloud();
+        await saveToGitHub();
         renderTeacherTable();
     }
     
@@ -450,7 +454,7 @@
         let c = getCadetById(cid);
         if (c && c.grades[subj] && c.grades[subj][index] !== undefined) {
             c.grades[subj].splice(index, 1);
-            await saveToCloud();
+            await saveToGitHub();
             renderTeacherTable();
         }
     }
@@ -459,7 +463,7 @@
         let c = getCadetById(cid);
         if (c && c.grades[subj]?.length) {
             c.grades[subj].pop();
-            await saveToCloud();
+            await saveToGitHub();
             renderTeacherTable();
         }
     }
@@ -582,6 +586,8 @@
         document.getElementById('loginForm').style.display = 'block';
         document.getElementById('teacherPanel').style.display = 'none';
         document.getElementById('loginError').innerText = '';
+        document.getElementById('loginInput').value = '';
+        document.getElementById('passwordInput').value = '';
     }
     
     document.getElementById('loginBtn').onclick = () => {
@@ -605,7 +611,7 @@
     
     document.addEventListener('DOMContentLoaded', async () => {
         document.getElementById('loginForm').style.display = 'block';
-        await loadFromCloud();
+        await loadFromGitHub();
     });
 </script>
 </body>

@@ -2,88 +2,35 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Академия Прокуратуры - Электронный дневник</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            font-family: 'Inter', 'Segoe UI', sans-serif;
+            font-family: 'Inter', sans-serif;
             background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
             min-height: 100vh;
             padding: 20px;
-            position: relative;
         }
-
-        /* Декоративные элементы фона */
-        body::before {
-            content: '';
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" opacity="0.03"><path fill="white" d="M20,20 L30,10 L40,20 L30,30 Z M60,60 L70,50 L80,60 L70,70 Z M40,80 L45,75 L50,80 L45,85 Z"/><circle cx="80" cy="30" r="4"/><circle cx="15" cy="70" r="3"/></svg>');
-            background-repeat: repeat;
-            pointer-events: none;
-        }
-
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-            position: relative;
-            z-index: 1;
-        }
-
-        /* Карточка входа */
+        .container { max-width: 1400px; margin: 0 auto; }
+        
         .login-card {
-            background: rgba(255, 255, 255, 0.98);
-            backdrop-filter: blur(10px);
+            background: rgba(255,255,255,0.98);
             border-radius: 40px;
             padding: 50px 45px;
             max-width: 480px;
             margin: 100px auto;
-            box-shadow: 0 25px 45px rgba(0,0,0,0.2), 0 0 0 1px rgba(255,255,255,0.2);
             text-align: center;
-            transition: transform 0.3s ease;
+            box-shadow: 0 25px 45px rgba(0,0,0,0.2);
         }
-
-        .login-card:hover {
-            transform: translateY(-5px);
-        }
-
-        .login-card .logo {
-            width: 70px;
-            height: 70px;
-            background: linear-gradient(135deg, #1e3a5f, #2c5282);
-            border-radius: 30px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0 auto 20px;
-            font-size: 2rem;
-        }
-
         .login-card h1 {
-            font-size: 1.8rem;
             background: linear-gradient(135deg, #1e3a5f, #2c5282);
             -webkit-background-clip: text;
             background-clip: text;
             color: transparent;
             margin-bottom: 8px;
         }
-
-        .login-card .subtitle {
-            color: #64748b;
-            font-size: 0.85rem;
-            margin-bottom: 30px;
-        }
-
         .login-card input {
             width: 100%;
             padding: 15px 18px;
@@ -91,16 +38,11 @@
             border: 2px solid #e2e8f0;
             border-radius: 28px;
             font-size: 1rem;
-            transition: all 0.2s;
-            background: white;
         }
-
         .login-card input:focus {
             outline: none;
             border-color: #2c5282;
-            box-shadow: 0 0 0 3px rgba(44,82,130,0.1);
         }
-
         .login-card button {
             width: 100%;
             padding: 15px;
@@ -111,25 +53,17 @@
             font-size: 1rem;
             font-weight: 600;
             cursor: pointer;
-            transition: all 0.2s;
             margin-top: 20px;
         }
-
         .login-card button:hover {
             transform: scale(1.02);
-            box-shadow: 0 10px 25px -5px rgba(30,58,95,0.4);
         }
-
-        /* Главная панель */
         .main-panel {
-            background: rgba(255, 255, 255, 0.96);
-            backdrop-filter: blur(8px);
+            background: rgba(255,255,255,0.96);
             border-radius: 40px;
             padding: 32px 36px;
             box-shadow: 0 25px 45px rgba(0,0,0,0.15);
-            animation: fadeIn 0.4s ease;
         }
-
         .panel-header {
             display: flex;
             justify-content: space-between;
@@ -140,21 +74,13 @@
             padding-bottom: 20px;
             border-bottom: 2px solid rgba(0,0,0,0.06);
         }
-
-        .header-title h1 {
-            font-size: 1.8rem;
+        .panel-header h1 {
             background: linear-gradient(135deg, #1e3a5f, #2c5282);
             -webkit-background-clip: text;
             background-clip: text;
             color: transparent;
+            font-size: 1.8rem;
         }
-
-        .header-title p {
-            font-size: 0.8rem;
-            color: #64748b;
-            margin-top: 4px;
-        }
-
         .logout-btn {
             background: #ef4444;
             color: white;
@@ -163,43 +89,22 @@
             border-radius: 40px;
             font-weight: 600;
             cursor: pointer;
-            transition: all 0.2s;
         }
-
-        .logout-btn:hover {
-            background: #dc2626;
-            transform: translateY(-2px);
-        }
-
-        /* Форма добавления курсанта */
+        .logout-btn:hover { background: #dc2626; transform: translateY(-2px); }
+        
         .add-cadet-form {
             background: linear-gradient(135deg, #f8fafc, #f1f5f9);
             border-radius: 28px;
             padding: 28px 30px;
             margin-bottom: 35px;
         }
-
-        .add-cadet-form h3 {
-            color: #1e293b;
-            margin-bottom: 18px;
-            font-size: 1.2rem;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
         .form-row {
             display: flex;
             flex-wrap: wrap;
             gap: 15px;
             align-items: flex-end;
         }
-
-        .form-group {
-            flex: 1;
-            min-width: 160px;
-        }
-
+        .form-group { flex: 1; min-width: 160px; }
         .form-group label {
             display: block;
             font-size: 0.7rem;
@@ -207,9 +112,7 @@
             text-transform: uppercase;
             color: #64748b;
             margin-bottom: 6px;
-            letter-spacing: 0.5px;
         }
-
         .form-group input {
             width: 100%;
             padding: 12px 16px;
@@ -217,14 +120,8 @@
             border: 1.5px solid #e2e8f0;
             border-radius: 20px;
             font-size: 0.9rem;
-            transition: all 0.2s;
         }
-
-        .form-group input:focus {
-            outline: none;
-            border-color: #2c5282;
-        }
-
+        .form-group input:focus { outline: none; border-color: #2c5282; }
         .add-cadet-form button {
             background: linear-gradient(135deg, #10b981, #059669);
             color: white;
@@ -233,22 +130,11 @@
             border-radius: 24px;
             font-weight: 600;
             cursor: pointer;
-            transition: all 0.2s;
             height: 46px;
         }
-
-        .add-cadet-form button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(16,185,129,0.3);
-        }
-
-        /* Таблица */
-        .table-wrapper {
-            overflow-x: auto;
-            border-radius: 24px;
-            border: 1px solid #eef2f8;
-        }
-
+        .add-cadet-form button:hover { transform: translateY(-2px); }
+        
+        .table-wrapper { overflow-x: auto; border-radius: 24px; border: 1px solid #eef2f8; }
         .grades-table {
             width: 100%;
             border-collapse: collapse;
@@ -257,48 +143,28 @@
             border-radius: 24px;
             overflow: hidden;
         }
-
         .grades-table th {
             background: linear-gradient(135deg, #1e3a5f, #2c5282);
             color: white;
             padding: 16px 12px;
             text-align: center;
-            font-weight: 600;
-            font-size: 0.85rem;
         }
-
-        .grades-table th:first-child {
-            text-align: left;
-            padding-left: 20px;
-        }
-
+        .grades-table th:first-child { text-align: left; padding-left: 20px; }
         .grades-table td {
             padding: 14px 8px;
             border-bottom: 1px solid #f0f4fa;
             text-align: center;
             vertical-align: middle;
         }
-
         .grades-table td:first-child {
             text-align: left;
             padding-left: 20px;
             font-weight: 600;
             background: #fafdff;
         }
-
-        .grades-table tr:hover td {
-            background: #fafcff;
-        }
-
-        /* Оценки */
-        .grades-list {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            gap: 6px;
-            margin-bottom: 10px;
-        }
-
+        .grades-table tr:hover td { background: #fafcff; }
+        
+        .grades-list { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; margin-bottom: 10px; }
         .grade-badge {
             display: inline-flex;
             align-items: center;
@@ -309,47 +175,16 @@
             font-weight: 700;
             font-size: 0.85rem;
             cursor: pointer;
-            transition: all 0.2s ease;
+            transition: all 0.2s;
             padding: 0 10px;
         }
-
-        .grade-badge.normal {
-            background: linear-gradient(145deg, #e0e7ff, #d1d9ff);
-            color: #1e3a5f;
-        }
-
-        .grade-badge.absent {
-            background: linear-gradient(145deg, #fee2e2, #fecaca);
-            color: #b91c1c;
-        }
-
-        .grade-badge.task {
-            background: linear-gradient(145deg, #fef3c7, #fde68a);
-            color: #92400e;
-        }
-
-        .grade-badge:hover {
-            transform: scale(1.08);
-            filter: brightness(0.95);
-        }
-
-        .grade-control {
-            display: flex;
-            gap: 8px;
-            justify-content: center;
-            align-items: center;
-            flex-wrap: wrap;
-        }
-
-        .grade-select {
-            padding: 8px 12px;
-            border: 1.5px solid #e2e8f0;
-            border-radius: 24px;
-            font-size: 0.8rem;
-            background: white;
-            cursor: pointer;
-        }
-
+        .grade-badge.normal { background: linear-gradient(145deg, #e0e7ff, #d1d9ff); color: #1e3a5f; }
+        .grade-badge.absent { background: linear-gradient(145deg, #fee2e2, #fecaca); color: #b91c1c; }
+        .grade-badge.task { background: linear-gradient(145deg, #fef3c7, #fde68a); color: #92400e; }
+        .grade-badge:hover { transform: scale(1.08); filter: brightness(0.95); }
+        
+        .grade-control { display: flex; gap: 8px; justify-content: center; align-items: center; flex-wrap: wrap; }
+        .grade-select { padding: 8px 12px; border: 1.5px solid #e2e8f0; border-radius: 24px; font-size: 0.8rem; background: white; cursor: pointer; }
         .action-btn {
             background: #eef3fc;
             border: none;
@@ -360,27 +195,11 @@
             font-size: 1rem;
             transition: all 0.2s;
         }
-
-        .action-btn.add {
-            background: #2c5282;
-            color: white;
-        }
-
-        .action-btn.add:hover {
-            background: #1e3a5f;
-            transform: scale(1.05);
-        }
-
-        .action-btn.del-last {
-            background: #fee2e2;
-            color: #b91c1c;
-        }
-
-        .action-btn.del-last:hover {
-            background: #fecaca;
-            transform: scale(1.05);
-        }
-
+        .action-btn.add { background: #2c5282; color: white; }
+        .action-btn.add:hover { background: #1e3a5f; transform: scale(1.05); }
+        .action-btn.del-last { background: #fee2e2; color: #b91c1c; }
+        .action-btn.del-last:hover { background: #fecaca; transform: scale(1.05); }
+        
         .delete-cadet-btn {
             background: #fee2e2;
             border: none;
@@ -391,43 +210,26 @@
             font-size: 1rem;
             transition: all 0.2s;
         }
-
-        .delete-cadet-btn:hover {
-            background: #fecaca;
-            transform: scale(1.05);
-        }
-
-        .avg-cell {
-            background: #ecfdf5;
-            font-weight: 800;
-            color: #065f46;
-            font-size: 1rem;
-        }
-
-        .empty-row {
-            text-align: center;
-            padding: 50px;
-            color: #94a3b8;
-            font-style: italic;
-        }
-
-        /* Статус */
+        .delete-cadet-btn:hover { background: #fecaca; transform: scale(1.05); }
+        .avg-cell { background: #ecfdf5; font-weight: 800; color: #065f46; font-size: 1rem; }
+        .empty-row { text-align: center; padding: 50px; color: #94a3b8; font-style: italic; }
+        
         .status {
             position: fixed;
             bottom: 20px;
             right: 20px;
             background: #1e293b;
-            backdrop-filter: blur(8px);
             color: white;
             padding: 8px 20px;
             border-radius: 40px;
             font-size: 0.7rem;
             font-weight: 500;
             z-index: 1000;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
         }
-
-        /* Легенда */
+        .status.syncing { background: #f59e0b; }
+        .status.synced { background: #22c55e; }
+        .status.error { background: #ef4444; }
+        
         .legend {
             display: flex;
             gap: 24px;
@@ -439,109 +241,81 @@
             flex-wrap: wrap;
             font-size: 0.7rem;
         }
-
-        .legend span {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
+        .legend .badge-small { width: 28px; height: 28px; border-radius: 18px; display: inline-block; }
+        .error { color: #dc2626; font-size: 0.8rem; margin-top: 10px; }
+        
+        .setup-card {
+            background: #fef3c7;
+            border-radius: 24px;
+            padding: 20px;
+            margin-bottom: 20px;
+            text-align: left;
         }
-
-        .legend .badge-small {
-            width: 28px;
-            height: 28px;
-            border-radius: 18px;
-            display: inline-block;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .error {
-            color: #dc2626;
-            font-size: 0.8rem;
-            margin-top: 10px;
-        }
+        .setup-card h4 { color: #92400e; margin-bottom: 10px; }
+        .setup-card input { width: 100%; padding: 10px; margin: 5px 0; border-radius: 12px; border: 1px solid #fde68a; }
+        .setup-card button { background: #92400e; color: white; border: none; padding: 10px; border-radius: 12px; cursor: pointer; width: 100%; margin-top: 10px; }
+        .setup-card button:hover { background: #78350f; }
     </style>
 </head>
 <body>
 <div class="container">
     <div id="status" class="status">✨ Система готова</div>
 
-    <!-- Форма входа -->
     <div id="loginForm">
         <div class="login-card">
-            <div class="logo">⚖️</div>
+            <div style="font-size: 3rem;">⚖️</div>
             <h1>Академия Прокуратуры</h1>
-            <div class="subtitle">электронный журнал успеваемости</div>
+            <div style="color:#64748b; margin-bottom:30px;">электронный журнал</div>
+            
+            <div id="setupPanel" class="setup-card" style="display:none;">
+                <h4>📡 Настройка синхронизации (один раз)</h4>
+                <p style="font-size:12px; margin-bottom:10px;">Введите данные вашего GitHub репозитория:</p>
+                <input type="text" id="setupUsername" placeholder="Логин GitHub (например, ivanov)">
+                <input type="text" id="setupRepo" placeholder="Название репозитория (например, diary)">
+                <input type="password" id="setupToken" placeholder="GitHub Token (ghp_...)">
+                <button id="saveSetupBtn">💾 Сохранить настройки</button>
+            </div>
+            
             <input type="text" id="loginInput" placeholder="Логин преподавателя">
             <input type="password" id="passwordInput" placeholder="Пароль">
             <button id="loginBtn">Войти в систему →</button>
             <div id="loginError" class="error"></div>
-            <div style="margin-top: 30px; font-size: 0.7rem; color: #94a3b8; border-top: 1px solid #e2e8f0; padding-top: 20px;">
+            <div style="margin-top: 30px; font-size: 0.7rem; color: #94a3b8;">
                 🔐 Преподаватель: <strong>teacher</strong> / <strong>123</strong>
             </div>
         </div>
     </div>
 
-    <!-- Панель преподавателя -->
     <div id="teacherPanel" style="display: none;">
         <div class="main-panel">
             <div class="panel-header">
-                <div class="header-title">
-                    <h1>📖 Журнал успеваемости</h1>
-                    <p>Управление оценками и посещаемостью</p>
-                </div>
+                <h1>📖 Журнал успеваемости</h1>
                 <button id="logoutTeacher" class="logout-btn">🚪 Выйти</button>
             </div>
 
-            <!-- Форма добавления курсанта -->
             <div class="add-cadet-form">
                 <h3>➕ Добавить курсанта</h3>
                 <div class="form-row">
-                    <div class="form-group">
-                        <label>Фамилия</label>
-                        <input type="text" id="newSurname" placeholder="Иванов">
-                    </div>
-                    <div class="form-group">
-                        <label>Имя</label>
-                        <input type="text" id="newName" placeholder="Иван">
-                    </div>
-                    <div class="form-group">
-                        <label>Отчество</label>
-                        <input type="text" id="newPatronymic" placeholder="Иванович">
-                    </div>
+                    <div class="form-group"><label>Фамилия</label><input type="text" id="newSurname" placeholder="Иванов"></div>
+                    <div class="form-group"><label>Имя</label><input type="text" id="newName" placeholder="Иван"></div>
+                    <div class="form-group"><label>Отчество</label><input type="text" id="newPatronymic" placeholder="Иванович"></div>
                     <button id="addCadetBtn">➕ Добавить курсанта</button>
                 </div>
             </div>
 
-            <!-- Таблица оценок -->
             <div class="table-wrapper">
                 <table class="grades-table" id="gradesTable">
-                    <thead id="tableHeader">
-                        <tr>
-                            <th>👤 ФИО курсанта</th>
-                            <th>Военно Тактическая Подготовка</th>
-                            <th>Русский язык</th>
-                            <th>Юридический</th>
-                            <th>📊 Средний балл</th>
-                            <th>⚙️</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tableBody">
-                        <tr><td colspan="6" class="empty-row">📭 Нет курсантов. Добавьте первого!</td></tr>
-                    </tbody>
+                    <thead id="tableHeader"><tr><th>👤 ФИО курсанта</th><th>Военно Тактическая</th><th>Русский язык</th><th>Юридический</th><th>📊 Средний</th><th>⚙️</th></tr></thead>
+                    <tbody id="tableBody"><tr><td colspan="6" class="empty-row">📭 Нет курсантов. Добавьте первого!</td></tr></tbody>
                 </table>
             </div>
 
-            <!-- Легенда -->
             <div class="legend">
                 <span><div class="badge-small" style="background:#d1d9ff;"></div> Оценка (2-5)</span>
                 <span><div class="badge-small" style="background:#fecaca;"></div> ❌ Не пришёл</span>
                 <span><div class="badge-small" style="background:#fde68a;"></div> 📋 Отработка</span>
                 <span>🔴 Клик по оценке — удаление</span>
-                <span>➕ Кнопка + — новая оценка</span>
+                <span>🔄 Синхронизация с GitHub</span>
             </div>
         </div>
     </div>
@@ -549,42 +323,141 @@
 
 <script>
     // ============================================
-    // ЭЛЕКТРОННЫЙ ДНЕВНИК - ЛОКАЛЬНОЕ СОХРАНЕНИЕ
-    // ПРОСТОЙ, КРАСИВЫЙ, РАБОТАЕТ СРАЗУ
+    // ЭЛЕКТРОННЫЙ ДНЕВНИК - СИНХРОНИЗАЦИЯ ЧЕРЕЗ GITHUB
     // ============================================
     
-    const STORAGE_KEY = "diary_beauty";
-    const SUBJECTS = ["Военно Тактическая Подготовка", "Русский язык", "Юридический"];
-    
+    let CONFIG = null;
     let appData = null;
     let currentUser = null;
+    let syncTimer = null;
+    let isSyncing = false;
     
-    // Загрузка данных
-    function loadData() {
-        const saved = localStorage.getItem(STORAGE_KEY);
+    const SUBJECTS = ["Военно Тактическая Подготовка", "Русский язык", "Юридический"];
+    const STORAGE_CONFIG_KEY = "diary_github_config";
+    const STORAGE_DATA_KEY = "diary_data";
+    
+    function setStatus(type, text) {
+        const el = document.getElementById('status');
+        if (!el) return;
+        el.textContent = text;
+        el.className = `status ${type}`;
+        setTimeout(() => {
+            if (document.getElementById('status')?.className === `status ${type}`) {
+                const st = document.getElementById('status');
+                if (st) { st.className = 'status'; st.textContent = '✨ Готово'; }
+            }
+        }, 2000);
+    }
+    
+    // Загрузка конфигурации
+    function loadConfig() {
+        const saved = localStorage.getItem(STORAGE_CONFIG_KEY);
         if (saved) {
-            appData = JSON.parse(saved);
-        } else {
-            appData = {
-                users: [
-                    { id: "t1", login: "teacher", password: "123", role: "teacher", name: "Преподаватель" }
-                ],
-                cadets: []
-            };
-            saveData();
+            CONFIG = JSON.parse(saved);
+            document.getElementById('setupPanel').style.display = 'none';
+            return true;
+        }
+        document.getElementById('setupPanel').style.display = 'block';
+        return false;
+    }
+    
+    function saveConfig(username, repo, token) {
+        CONFIG = { username, repo, token };
+        localStorage.setItem(STORAGE_CONFIG_KEY, JSON.stringify(CONFIG));
+        document.getElementById('setupPanel').style.display = 'none';
+        setStatus('synced', '✅ Настройки сохранены');
+        return true;
+    }
+    
+    // Загрузка данных с GitHub
+    async function loadFromGitHub() {
+        if (!CONFIG) return false;
+        if (isSyncing) return false;
+        isSyncing = true;
+        try {
+            const url = `https://api.github.com/repos/${CONFIG.username}/${CONFIG.repo}/contents/data.json`;
+            const res = await fetch(url, {
+                headers: { 'Authorization': `token ${CONFIG.token}`, 'Accept': 'application/vnd.github.v3+json' }
+            });
+            if (res.ok) {
+                const data = await res.json();
+                const content = JSON.parse(atob(data.content));
+                appData = content;
+                localStorage.setItem(STORAGE_DATA_KEY, JSON.stringify(appData));
+                setStatus('synced', '✅ Данные загружены');
+                return true;
+            } else if (res.status === 404) {
+                // Файла нет, создаём начальные данные
+                appData = {
+                    users: [{ id: "t1", login: "teacher", password: "123", role: "teacher", name: "Преподаватель" }],
+                    cadets: []
+                };
+                await saveToGitHub();
+                return true;
+            }
+            throw new Error('Ошибка загрузки');
+        } catch(e) {
+            setStatus('error', '⚠️ Ошибка загрузки');
+            const local = localStorage.getItem(STORAGE_DATA_KEY);
+            if (local) appData = JSON.parse(local);
+            return false;
+        } finally {
+            isSyncing = false;
         }
     }
     
-    // Сохранение данных
-    function saveData() {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(appData));
-        const statusDiv = document.getElementById('status');
-        statusDiv.textContent = '💾 Сохранено';
-        statusDiv.style.background = '#f59e0b';
-        setTimeout(() => {
-            statusDiv.textContent = '✨ Готово';
-            statusDiv.style.background = '#1e293b';
-        }, 1000);
+    // Сохранение на GitHub
+    async function saveToGitHub() {
+        if (!CONFIG || !appData) return false;
+        localStorage.setItem(STORAGE_DATA_KEY, JSON.stringify(appData));
+        try {
+            const content = btoa(unescape(encodeURIComponent(JSON.stringify(appData, null, 2))));
+            let sha = null;
+            const getRes = await fetch(`https://api.github.com/repos/${CONFIG.username}/${CONFIG.repo}/contents/data.json`, {
+                headers: { 'Authorization': `token ${CONFIG.token}`, 'Accept': 'application/vnd.github.v3+json' }
+            });
+            if (getRes.ok) {
+                const info = await getRes.json();
+                sha = info.sha;
+            }
+            const res = await fetch(`https://api.github.com/repos/${CONFIG.username}/${CONFIG.repo}/contents/data.json`, {
+                method: 'PUT',
+                headers: {
+                    'Authorization': `token ${CONFIG.token}`,
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/vnd.github.v3+json'
+                },
+                body: JSON.stringify({
+                    message: `Обновление ${new Date().toLocaleString()}`,
+                    content: content,
+                    sha: sha,
+                    branch: 'main'
+                })
+            });
+            if (res.ok) {
+                setStatus('synced', '✅ Сохранено');
+                return true;
+            }
+            throw new Error('Ошибка');
+        } catch(e) {
+            setStatus('error', '⚠️ Ошибка сохранения');
+            return false;
+        }
+    }
+    
+    async function syncAndRender() {
+        if (CONFIG && currentUser) {
+            const oldData = JSON.stringify(appData);
+            await loadFromGitHub();
+            if (oldData !== JSON.stringify(appData)) {
+                renderTeacherTable();
+            }
+        }
+    }
+    
+    function startAutoSync() {
+        if (syncTimer) clearInterval(syncTimer);
+        syncTimer = setInterval(syncAndRender, 5000);
     }
     
     function getCadets() { return appData?.cadets || []; }
@@ -613,52 +486,46 @@
         return (sum / arr.length).toFixed(1);
     }
     
-    function addCadet(surname, name, patronymic) {
+    async function addCadet(surname, name, patronymic) {
         let newId = "c" + Date.now();
         let gradesInit = {};
         SUBJECTS.forEach(s => gradesInit[s] = []);
-        appData.cadets.push({
-            id: newId,
-            surname: surname,
-            name: name,
-            patronymic: patronymic,
-            grades: gradesInit
-        });
-        saveData();
+        appData.cadets.push({ id: newId, surname, name, patronymic, grades: gradesInit });
+        await saveToGitHub();
         renderTeacherTable();
     }
     
-    function deleteCadet(id) {
+    async function deleteCadet(id) {
         appData.cadets = appData.cadets.filter(c => c.id !== id);
-        saveData();
+        await saveToGitHub();
         renderTeacherTable();
     }
     
-    function addMark(cid, subj, markValue) {
+    async function addMark(cid, subj, markValue) {
         let c = getCadetById(cid);
         if (!c) return;
         let allowed = ['2','3','4','5','н','о'];
         if (!allowed.includes(markValue)) return;
         if (!c.grades[subj]) c.grades[subj] = [];
         c.grades[subj].push(markValue);
-        saveData();
+        await saveToGitHub();
         renderTeacherTable();
     }
     
-    function deleteMarkByIndex(cid, subj, index) {
+    async function deleteMarkByIndex(cid, subj, index) {
         let c = getCadetById(cid);
         if (c && c.grades[subj] && c.grades[subj][index] !== undefined) {
             c.grades[subj].splice(index, 1);
-            saveData();
+            await saveToGitHub();
             renderTeacherTable();
         }
     }
     
-    function removeLastMark(cid, subj) {
+    async function removeLastMark(cid, subj) {
         let c = getCadetById(cid);
         if (c && c.grades[subj]?.length) {
             c.grades[subj].pop();
-            saveData();
+            await saveToGitHub();
             renderTeacherTable();
         }
     }
@@ -679,10 +546,8 @@
         const thead = document.getElementById("tableHeader");
         const tbody = document.getElementById("tableBody");
         if (!thead || !tbody) return;
-        
         let cadets = getCadets();
         
-        // Заголовок
         let headerHtml = `<tr><th>👤 ФИО курсанта</th>`;
         SUBJECTS.forEach(s => headerHtml += `<th>${s}</th>`);
         headerHtml += `<th>📊 Средний балл</th><th>⚙️</th></tr>`;
@@ -694,24 +559,20 @@
         }
         
         tbody.innerHTML = '';
-        
         for (let cadet of cadets) {
             let numericGrades = getAllNumericGrades(cadet);
             let totalAvg = avgFromArray(numericGrades);
             let row = document.createElement('tr');
             
-            // ФИО
             let nameCell = document.createElement('td');
             nameCell.innerText = fullName(cadet);
             nameCell.style.fontWeight = 'bold';
             row.appendChild(nameCell);
             
-            // По каждому предмету
             for (let subj of SUBJECTS) {
                 let marks = cadet.grades[subj] || [];
                 let td = document.createElement('td');
                 
-                // Список оценок
                 let marksDiv = document.createElement('div');
                 marksDiv.className = 'grades-list';
                 for (let i = 0; i < marks.length; i++) {
@@ -719,19 +580,13 @@
                     badge.className = `grade-badge ${getMarkClass(marks[i])}`;
                     badge.innerText = getMarkDisplay(marks[i]);
                     badge.style.cursor = 'pointer';
-                    badge.title = 'Удалить оценку';
-                    badge.onclick = async (e) => {
-                        e.stopPropagation();
-                        deleteMarkByIndex(cadet.id, subj, i);
-                    };
+                    badge.onclick = () => deleteMarkByIndex(cadet.id, subj, i);
                     marksDiv.appendChild(badge);
                 }
                 td.appendChild(marksDiv);
                 
-                // Панель добавления
                 let controlDiv = document.createElement('div');
                 controlDiv.className = 'grade-control';
-                
                 let select = document.createElement('select');
                 select.className = 'grade-select';
                 ['2','3','4','5','н','о'].forEach(opt => {
@@ -740,25 +595,14 @@
                     option.innerText = opt === 'н' ? '❌ не пришёл' : (opt === 'о' ? '📋 отработка' : opt);
                     select.appendChild(option);
                 });
-                
                 let addBtn = document.createElement('button');
                 addBtn.innerText = '+';
                 addBtn.className = 'action-btn add';
-                addBtn.title = 'Добавить оценку';
-                addBtn.onclick = () => {
-                    addMark(cadet.id, subj, select.value);
-                };
-                
+                addBtn.onclick = () => addMark(cadet.id, subj, select.value);
                 let delLastBtn = document.createElement('button');
                 delLastBtn.innerText = '🗑️';
                 delLastBtn.className = 'action-btn del-last';
-                delLastBtn.title = 'Удалить последнюю оценку';
-                delLastBtn.onclick = () => {
-                    if (marks.length) {
-                        removeLastMark(cadet.id, subj);
-                    }
-                };
-                
+                delLastBtn.onclick = () => { if (marks.length) removeLastMark(cadet.id, subj); };
                 controlDiv.appendChild(select);
                 controlDiv.appendChild(addBtn);
                 controlDiv.appendChild(delLastBtn);
@@ -766,32 +610,23 @@
                 row.appendChild(td);
             }
             
-            // Средний балл
             let avgCell = document.createElement('td');
             avgCell.className = 'avg-cell';
             avgCell.innerText = totalAvg;
-            
-            // Удаление курсанта
             let actionCell = document.createElement('td');
             let delCadetBtn = document.createElement('button');
             delCadetBtn.innerText = '🗑️';
             delCadetBtn.className = 'delete-cadet-btn';
-            delCadetBtn.title = 'Удалить курсанта';
-            delCadetBtn.onclick = () => {
-                if (confirm(`Удалить курсанта ${fullName(cadet)} и все его оценки?`)) {
-                    deleteCadet(cadet.id);
-                }
-            };
+            delCadetBtn.onclick = () => { if (confirm('Удалить курсанта?')) deleteCadet(cadet.id); };
             actionCell.appendChild(delCadetBtn);
-            
             row.appendChild(avgCell);
             row.appendChild(actionCell);
             tbody.appendChild(row);
         }
     }
     
-    // Авторизация
     function login(loginVal, pwd) {
+        if (!appData) return false;
         const user = appData.users.find(u => u.login === loginVal && u.password === pwd && u.role === 'teacher');
         if (!user) {
             document.getElementById('loginError').innerText = 'Неверный логин или пароль';
@@ -801,44 +636,57 @@
         document.getElementById('loginForm').style.display = 'none';
         document.getElementById('teacherPanel').style.display = 'block';
         renderTeacherTable();
+        if (CONFIG) startAutoSync();
         return true;
     }
     
     function logout() {
         currentUser = null;
+        if (syncTimer) clearInterval(syncTimer);
         document.getElementById('loginForm').style.display = 'block';
         document.getElementById('teacherPanel').style.display = 'none';
         document.getElementById('loginError').innerText = '';
-        document.getElementById('loginInput').value = '';
-        document.getElementById('passwordInput').value = '';
     }
     
-    // Обработчики событий
     document.getElementById('loginBtn').onclick = () => {
         login(document.getElementById('loginInput').value.trim(), document.getElementById('passwordInput').value.trim());
     };
-    
     document.getElementById('logoutTeacher').onclick = logout;
     
     document.getElementById('addCadetBtn').onclick = () => {
         let surname = document.getElementById('newSurname').value.trim();
         let name = document.getElementById('newName').value.trim();
         let patronymic = document.getElementById('newPatronymic').value.trim();
-        if (!surname || !name || !patronymic) {
-            alert('Заполните все поля: Фамилия, Имя, Отчество');
-            return;
+        if (surname && name && patronymic) {
+            addCadet(surname, name, patronymic);
+            document.getElementById('newSurname').value = '';
+            document.getElementById('newName').value = '';
+            document.getElementById('newPatronymic').value = '';
+        } else {
+            alert('Заполните все поля');
         }
-        addCadet(surname, name, patronymic);
-        document.getElementById('newSurname').value = '';
-        document.getElementById('newName').value = '';
-        document.getElementById('newPatronymic').value = '';
     };
     
-    // Запуск
-    document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('saveSetupBtn').onclick = () => {
+        const username = document.getElementById('setupUsername').value.trim();
+        const repo = document.getElementById('setupRepo').value.trim();
+        const token = document.getElementById('setupToken').value.trim();
+        if (username && repo && token) {
+            saveConfig(username, repo, token);
+            loadFromGitHub().then(() => {
+                if (currentUser) renderTeacherTable();
+            });
+        } else {
+            alert('Заполните все поля');
+        }
+    };
+    
+    document.addEventListener('DOMContentLoaded', async () => {
         document.getElementById('loginForm').style.display = 'block';
-        document.getElementById('teacherPanel').style.display = 'none';
-        loadData();
+        loadConfig();
+        const local = localStorage.getItem(STORAGE_DATA_KEY);
+        if (local) appData = JSON.parse(local);
+        if (CONFIG) await loadFromGitHub();
     });
 </script>
 </body>

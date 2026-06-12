@@ -204,7 +204,7 @@
             font-size: 0.7rem;
             z-index: 1000;
         }
-        .status.saving { background: #3b82f6; }
+        .status.syncing { background: #f59e0b; }
         .status.synced { background: #22c55e; }
         .status.error { background: #ef4444; }
         .legend {
@@ -236,7 +236,7 @@
             <div id="loginError" class="error"></div>
             <div style="margin-top: 30px; font-size: 0.7rem; color: #94a3b8;">
                 🔐 Преподаватель: <strong>teacher</strong> / <strong>123</strong><br>
-                🗄️ База данных SQLite
+                ☁️ Онлайн синхронизация через GitHub
             </div>
         </div>
     </div>
@@ -274,7 +274,7 @@
                 <span><span style="background:#fecaca; padding:2px 8px; border-radius:20px;">❌</span> Не пришёл</span>
                 <span><span style="background:#fde68a; padding:2px 8px; border-radius:20px;">📋</span> Отработка</span>
                 <span>🔴 Клик по оценке — удаление</span>
-                <span>🗄️ Данные в SQLite</span>
+                <span>🔄 Синхронизация 5 сек</span>
             </div>
         </div>
     </div>
@@ -282,13 +282,24 @@
 
 <script>
     // ============================================
-    // ФРОНТЕНД - РАБОТА С API БАЗЫ ДАННЫХ
+    // ОНЛАЙН РЕЖИМ ЧЕРЕЗ GITHUB TOKEN
+    // ВСТАВЬТЕ ВАШ ТОКЕН В 3 МЕСТАХ НИЖЕ!
     // ============================================
     
-    const API_URL = 'api.php';
+    const GITHUB_USERNAME = "diary";     // ← ВАШ ЛОГИН НА GITHUB
+    const GITHUB_REPO = "diary-diary";              // ← НАЗВАНИЕ РЕПОЗИТОРИЯ
+    const GITHUB_TOKEN = "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";         // ← СЮДА ВСТАВЬТЕ ghp_...
+    // ============================================
+    
+    const API_URL = `https://api.github.com/repos/${GITHUB_USERNAME}/${GITHUB_REPO}/contents/data.json`;
+    const RAW_URL = `https://raw.githubusercontent.com/${GITHUB_USERNAME}/${GITHUB_REPO}/main/data.json`;
+    
     const SUBJECTS = ["Военно Тактическая Подготовка", "Русский язык", "Юридический"];
+    let appData = null;
     let currentUser = null;
-    let refreshTimer = null;
+    let syncTimer = null;
+    let isSyncing = false;
+    let isSaving = false;
     
     function setStatus(type, text) {
         const el = document.getElementById('status');
@@ -303,70 +314,165 @@
         }, 2000);
     }
     
-    async function apiRequest(action, data = {}) {
+    // Загрузка с GitHub
+    async function loadFromGitHub() {
+        if (isSyncing) return false;
+        isSyncing = true;
         try {
-            const response = await fetch(API_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ action, ...data })
-            });
-            return await response.json();
+            const res = await fetch(RAW_URL + '?t=' + Date.now());
+            if (res.ok) {
+                const newData = await res.json();
+                if (JSON.stringify(appData) !== JSON.stringify(newData)) {
+                    appData = newData;
+                    localStorage.setItem('diary_backup', JSON.stringify(appData));
+                    setStatus('synced', '🔄 Синхронизировано');
+                    if (currentUser) renderTeacherTable();
+                }
+                return true;
+            } else if (res.status === 404) {
+                appData = {
+                    users: [{ id: "t1", login: "teacher", password: "123", role: "teacher", name: "Преподаватель" }],
+                    cadets: []
+                };
+                await saveToGitHub();
+                return true;
+            }
+            throw new Error('Ошибка');
         } catch(e) {
-            setStatus('error', '⚠️ Ошибка соединения');
-            return { success: false, error: e.message };
+            setStatus('error', '⚠️ Ошибка');
+            const local = localStorage.getItem('diary_backup');
+            if (local) appData = JSON.parse(local);
+            else appData = { users: [{ id: "t1", login: "teacher", password: "123", role: "teacher" }], cadets: [] };
+            return false;
+        } finally {
+            isSyncing = false;
         }
     }
     
-    async function loadData() {
-        const result = await apiRequest('getAll');
-        if (result.success) {
-            window.cadets = result.cadets;
-            renderTeacherTable();
-            setStatus('synced', '✅ Данные загружены');
-        } else {
-            setStatus('error', '⚠️ Ошибка загрузки');
+    // Сохранение на GitHub
+    async function saveToGitHub() {
+        if (!appData || isSaving) return false;
+        isSaving = true;
+        localStorage.setItem('diary_backup', JSON.stringify(appData));
+        try {
+            const content = btoa(unescape(encodeURIComponent(JSON.stringify(appData, null, 2))));
+            let sha = null;
+            const getRes = await fetch(API_URL, { 
+                headers: { 'Authorization': `token ${GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json' } 
+            });
+            if (getRes.ok) {
+                const info = await getRes.json();
+                sha = info.sha;
+            }
+            const res = await fetch(API_URL, {
+                method: 'PUT',
+                headers: {
+                    'Authorization': `token ${GITHUB_TOKEN}`,
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/vnd.github.v3+json'
+                },
+                body: JSON.stringify({
+                    message: `Обновление ${new Date().toLocaleString()}`,
+                    content: content,
+                    sha: sha,
+                    branch: 'main'
+                })
+            });
+            if (res.ok) {
+                setStatus('synced', '✅ Сохранено');
+                return true;
+            }
+            return false;
+        } catch(e) {
+            setStatus('error', '⚠️ Ошибка');
+            return false;
+        } finally {
+            isSaving = false;
         }
+    }
+    
+    async function syncAndRender() {
+        if (currentUser && !isSyncing && !isSaving) {
+            const oldData = JSON.stringify(appData);
+            await loadFromGitHub();
+            if (oldData !== JSON.stringify(appData)) {
+                renderTeacherTable();
+            }
+        }
+    }
+    
+    function startAutoSync() {
+        if (syncTimer) clearInterval(syncTimer);
+        syncTimer = setInterval(syncAndRender, 5000);
+    }
+    
+    function getCadets() { return appData?.cadets || []; }
+    function getCadetById(id) { return appData?.cadets.find(c => c.id === id); }
+    function fullName(c) { return `${c.surname} ${c.name} ${c.patronymic}`.trim(); }
+    
+    function getNumericValue(mark) {
+        if (mark === 'н' || mark === 'о') return 0;
+        let num = parseInt(mark);
+        return isNaN(num) ? 0 : num;
+    }
+    
+    function getAllNumericGrades(cadet) {
+        let values = [];
+        SUBJECTS.forEach(subj => {
+            if (cadet.grades?.[subj]) {
+                cadet.grades[subj].forEach(m => values.push(getNumericValue(m)));
+            }
+        });
+        return values;
+    }
+    
+    function avgFromArray(arr) {
+        if (!arr.length) return "—";
+        let sum = arr.reduce((a,b)=>a+b,0);
+        return (sum / arr.length).toFixed(1);
     }
     
     async function addCadet(surname, name, patronymic) {
-        const result = await apiRequest('addCadet', { surname, name, patronymic });
-        if (result.success) {
-            await loadData();
-            setStatus('synced', '✅ Курсант добавлен');
-        } else {
-            alert('Ошибка: ' + result.error);
-        }
+        let newId = "c" + Date.now();
+        let gradesInit = {};
+        SUBJECTS.forEach(s => gradesInit[s] = []);
+        appData.cadets.push({ id: newId, surname, name, patronymic, grades: gradesInit });
+        await saveToGitHub();
+        renderTeacherTable();
     }
     
     async function deleteCadet(id) {
-        const result = await apiRequest('deleteCadet', { id });
-        if (result.success) {
-            await loadData();
-            setStatus('synced', '✅ Курсант удалён');
+        appData.cadets = appData.cadets.filter(c => c.id !== id);
+        await saveToGitHub();
+        renderTeacherTable();
+    }
+    
+    async function addMark(cid, subj, markValue) {
+        let c = getCadetById(cid);
+        if (!c) return;
+        let allowed = ['2','3','4','5','н','о'];
+        if (!allowed.includes(markValue)) return;
+        if (!c.grades[subj]) c.grades[subj] = [];
+        c.grades[subj].push(markValue);
+        await saveToGitHub();
+        renderTeacherTable();
+    }
+    
+    async function deleteMarkByIndex(cid, subj, index) {
+        let c = getCadetById(cid);
+        if (c && c.grades[subj] && c.grades[subj][index] !== undefined) {
+            c.grades[subj].splice(index, 1);
+            await saveToGitHub();
+            renderTeacherTable();
         }
     }
     
-    async function addMark(cadetId, subject, mark) {
-        const result = await apiRequest('addMark', { cadetId, subject, mark });
-        if (result.success) {
-            await loadData();
-            setStatus('synced', '✅ Оценка добавлена');
-        }
-    }
-    
-    async function deleteMark(cadetId, subject, index) {
-        const result = await apiRequest('deleteMark', { cadetId, subject, index });
-        if (result.success) {
-            await loadData();
-            setStatus('synced', '✅ Оценка удалена');
-        }
-    }
-    
-    async function removeLastMark(cadetId, subject) {
-        const result = await apiRequest('removeLastMark', { cadetId, subject });
-        if (result.success) {
-            await loadData();
-            setStatus('synced', '✅ Последняя оценка удалена');
+    async function removeLastMark(cid, subj) {
+        let c = getCadetById(cid);
+        if (c && c.grades[subj]?.length) {
+            c.grades[subj].pop();
+            await saveToGitHub();
+            renderTeacherTable();
         }
     }
     
@@ -382,25 +488,15 @@
         return 'normal';
     }
     
-    function avg(grades) {
-        if (!grades.length) return "—";
-        let numeric = grades.map(g => {
-            if (g === 'н' || g === 'о') return 0;
-            return parseInt(g);
-        });
-        let sum = numeric.reduce((a,b)=>a+b,0);
-        return (sum / numeric.length).toFixed(1);
-    }
-    
     function renderTeacherTable() {
         const thead = document.getElementById("tableHeader");
         const tbody = document.getElementById("tableBody");
         if (!thead || !tbody) return;
-        let cadets = window.cadets || [];
+        let cadets = getCadets();
         
         let headerHtml = `<tr><th>👤 ФИО курсанта</th>`;
         SUBJECTS.forEach(s => headerHtml += `<th>${s}</th>`);
-        headerHtml += `<th>📊 Средний балл</th><th>⚙️</th></tr>`;
+        headerHtml += `<th>📊 Средний балл</th><th>⚙️</th><tr>`;
         thead.innerHTML = headerHtml;
         
         if (!cadets.length) {
@@ -410,15 +506,12 @@
         
         tbody.innerHTML = '';
         for (let cadet of cadets) {
-            let allGrades = [];
-            SUBJECTS.forEach(s => {
-                if (cadet.grades[s]) allGrades.push(...cadet.grades[s]);
-            });
-            let totalAvg = avg(allGrades);
+            let numericGrades = getAllNumericGrades(cadet);
+            let totalAvg = avgFromArray(numericGrades);
             let row = document.createElement('tr');
             
             let nameCell = document.createElement('td');
-            nameCell.innerText = `${cadet.surname} ${cadet.name} ${cadet.patronymic}`;
+            nameCell.innerText = fullName(cadet);
             nameCell.style.fontWeight = 'bold';
             row.appendChild(nameCell);
             
@@ -433,7 +526,7 @@
                     badge.className = `grade-badge ${getMarkClass(marks[i])}`;
                     badge.innerText = getMarkDisplay(marks[i]);
                     badge.style.cursor = 'pointer';
-                    badge.onclick = () => deleteMark(cadet.id, subj, i);
+                    badge.onclick = () => deleteMarkByIndex(cadet.id, subj, i);
                     marksDiv.appendChild(badge);
                 }
                 td.appendChild(marksDiv);
@@ -471,7 +564,7 @@
             delCadetBtn.innerText = '🗑️';
             delCadetBtn.className = 'delete-cadet-btn';
             delCadetBtn.onclick = () => {
-                if (confirm(`Удалить курсанта?`)) deleteCadet(cadet.id);
+                if (confirm(`Удалить курсанта ${fullName(cadet)}?`)) deleteCadet(cadet.id);
             };
             actionCell.appendChild(delCadetBtn);
             row.appendChild(avgCell);
@@ -480,29 +573,24 @@
         }
     }
     
-    function startAutoRefresh() {
-        if (refreshTimer) clearInterval(refreshTimer);
-        refreshTimer = setInterval(() => {
-            if (currentUser) loadData();
-        }, 5000);
-    }
-    
-    async function login(loginVal, pwd) {
-        if (loginVal === 'teacher' && pwd === '123') {
-            currentUser = { login: 'teacher' };
-            document.getElementById('loginForm').style.display = 'none';
-            document.getElementById('teacherPanel').style.display = 'block';
-            await loadData();
-            startAutoRefresh();
-            return true;
+    function login(loginVal, pwd) {
+        if (!appData) return false;
+        const user = appData.users.find(u => u.login === loginVal && u.password === pwd && u.role === 'teacher');
+        if (!user) {
+            document.getElementById('loginError').innerText = 'Неверный логин или пароль';
+            return false;
         }
-        document.getElementById('loginError').innerText = 'Неверный логин или пароль';
-        return false;
+        currentUser = user;
+        document.getElementById('loginForm').style.display = 'none';
+        document.getElementById('teacherPanel').style.display = 'block';
+        renderTeacherTable();
+        startAutoSync();
+        return true;
     }
     
     function logout() {
         currentUser = null;
-        if (refreshTimer) clearInterval(refreshTimer);
+        if (syncTimer) clearInterval(syncTimer);
         document.getElementById('loginForm').style.display = 'block';
         document.getElementById('teacherPanel').style.display = 'none';
         document.getElementById('loginError').innerText = '';
@@ -529,8 +617,9 @@
         }
     };
     
-    document.addEventListener('DOMContentLoaded', () => {
+    document.addEventListener('DOMContentLoaded', async () => {
         document.getElementById('loginForm').style.display = 'block';
+        await loadFromGitHub();
     });
 </script>
 </body>

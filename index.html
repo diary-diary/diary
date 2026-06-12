@@ -24,43 +24,53 @@
 
         <!-- ПАНЕЛЬ ПРЕПОДАВАТЕЛЯ -->
         <div id="teacherPanel" style="display: none;">
-            <h1>👨‍🏫 Панель преподавателя</h1>
-            <button id="logoutTeacher" class="logout">Выйти</button>
+            <div class="header-flex">
+                <h1>👨‍🏫 Панель преподавателя</h1>
+                <button id="logoutTeacher" class="logout">Выйти</button>
+            </div>
             <hr>
-            <h3>Добавить курсанта</h3>
-            <input type="text" id="newName" placeholder="Имя">
-            <input type="text" id="newSurname" placeholder="Фамилия">
-            <input type="text" id="newClass" placeholder="Класс">
-            <input type="text" id="newLogin" placeholder="Логин">
-            <input type="password" id="newPass" placeholder="Пароль">
-            <button id="addCadetBtn">➕ Добавить</button>
 
-            <h3>Список курсантов</h3>
-            <select id="cadetSelect"></select>
-            <button id="loadGradesBtn">Загрузить оценки</button>
+            <!-- Форма добавления курсанта (без класса) -->
+            <div class="add-cadet-form">
+                <h3>➕ Добавить курсанта</h3>
+                <input type="text" id="newName" placeholder="Имя">
+                <input type="text" id="newSurname" placeholder="Фамилия">
+                <input type="text" id="newLogin" placeholder="Логин">
+                <input type="password" id="newPass" placeholder="Пароль">
+                <button id="addCadetBtn">Добавить</button>
+            </div>
 
+            <!-- Большой список курсантов в виде карточек -->
+            <h3>👥 Список курсантов</h3>
+            <div id="cadetsGrid" class="cadets-grid"></div>
+
+            <!-- Блок с оценками выбранного курсанта -->
             <div id="gradesBlock" style="display: none;">
                 <h2 id="selectedCadetName"></h2>
                 <table id="gradesTable">
-                    <thead><tr><th>Предмет</th><th>Оценки</th><th>Средний балл</th><th>Действие</th></tr></thead>
+                    <thead>
+                        <tr><th>Предмет</th><th>Оценки</th><th>Средний балл</th><th>Действие</th></tr>
+                    </thead>
                     <tbody id="gradesBody"></tbody>
                 </table>
-                <div>
+                <div class="add-grade-form">
                     <select id="subjectForGrade">
                         <option>Военно Тактическая Подготовка</option>
                         <option>Русский язык</option>
                         <option>Юридический</option>
                     </select>
-                    <input type="number" id="newGrade" min="2" max="5" placeholder="2-5">
+                    <input type="number" id="newGrade" min="2" max="5" placeholder="Оценка 2-5">
                     <button id="addGradeBtn">Поставить оценку</button>
                 </div>
             </div>
         </div>
 
-        <!-- ПАНЕЛЬ КУРСАНТА -->
+        <!-- ПАНЕЛЬ КУРСАНТА (только просмотр) -->
         <div id="cadetPanel" style="display: none;">
-            <h1>📘 Дневник курсанта</h1>
-            <button id="logoutCadet" class="logout">Выйти</button>
+            <div class="header-flex">
+                <h1>📘 Дневник курсанта</h1>
+                <button id="logoutCadet" class="logout">Выйти</button>
+            </div>
             <div id="cadetInfo"></div>
             <table id="cadetGrades">
                 <thead><tr><th>Предмет</th><th>Оценки</th><th>Средний балл</th></tr></thead>

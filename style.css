@@ -8,7 +8,7 @@ body {
     padding: 20px;
 }
 .container {
-    max-width: 1100px;
+    max-width: 1200px;
     margin: 0 auto;
     background: white;
     border-radius: 24px;
@@ -17,6 +17,11 @@ body {
 }
 h1, h2, h3 {
     color: #1e4663;
+}
+.header-flex {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
 .card {
     max-width: 400px;
@@ -32,8 +37,7 @@ label {
 }
 input, select, button {
     padding: 8px 12px;
-    margin-top: 5px;
-    margin-right: 8px;
+    margin: 5px 8px 5px 0;
     border-radius: 12px;
     border: 1px solid #ccc;
 }
@@ -55,6 +59,42 @@ button:hover {
     color: red;
     margin-top: 10px;
 }
+/* Сетка карточек курсантов */
+.cadets-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 16px;
+    margin: 20px 0;
+}
+.cadet-card {
+    background: #f8fafd;
+    border: 1px solid #dce5f0;
+    border-radius: 20px;
+    padding: 16px;
+    cursor: pointer;
+    transition: 0.2s;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+.cadet-card:hover {
+    background: #e6f0ff;
+    transform: translateY(-3px);
+    border-color: #1e4663;
+}
+.cadet-card.selected {
+    background: #d4e4ff;
+    border-color: #1e4663;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
+.cadet-card h4 {
+    margin: 0 0 8px 0;
+    color: #1e4663;
+}
+.cadet-card p {
+    margin: 4px 0;
+    font-size: 0.9rem;
+    color: #2c3e50;
+}
+/* Таблицы */
 table {
     width: 100%;
     border-collapse: collapse;
@@ -75,7 +115,14 @@ th {
     padding: 4px 8px;
     border-radius: 20px;
     margin-right: 5px;
+    font-size: 0.85rem;
 }
 hr {
     margin: 20px 0;
+}
+.add-cadet-form, .add-grade-form {
+    background: #f4f9fe;
+    padding: 15px;
+    border-radius: 20px;
+    margin: 15px 0;
 }

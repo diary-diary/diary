@@ -3,34 +3,35 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Электронный дневник - Вход</title>
+    <title>Электронный дневник</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="container">
-        <!-- ФОРМА ВХОДА -->
-        <div id="login-form">
+    <div class="container" id="app">
+        <!-- Форма входа -->
+        <div id="loginForm">
             <h1>📓 Электронный дневник</h1>
             <div class="card">
-                <h2>Авторизация</h2>
+                <h2>Вход</h2>
                 <label>Логин:</label>
-                <input type="text" id="login" placeholder="teacher или cadet">
+                <input type="text" id="loginInput" placeholder="Логин">
                 <label>Пароль:</label>
-                <input type="password" id="password" placeholder="123">
-                <button id="doLogin">Войти</button>
-                <div id="errorMsg" class="error"></div>
+                <input type="password" id="passwordInput" placeholder="Пароль">
+                <button id="loginBtn">Войти</button>
+                <div id="loginError" class="error"></div>
+                <hr>
+                <p class="hint">Преподаватель: <strong>teacher</strong> / <strong>123</strong><br>
+                Курсант: <strong>cadet</strong> / <strong>123</strong></p>
             </div>
         </div>
 
-        <!-- ПАНЕЛЬ ПРЕПОДАВАТЕЛЯ -->
+        <!-- Панель преподавателя -->
         <div id="teacherPanel" style="display: none;">
             <div class="header-flex">
                 <h1>👨‍🏫 Панель преподавателя</h1>
                 <button id="logoutTeacher" class="logout">Выйти</button>
             </div>
             <hr>
-
-            <!-- Форма добавления курсанта (без класса) -->
             <div class="add-cadet-form">
                 <h3>➕ Добавить курсанта</h3>
                 <input type="text" id="newName" placeholder="Имя">
@@ -40,16 +41,14 @@
                 <button id="addCadetBtn">Добавить</button>
             </div>
 
-            <!-- Большой список курсантов в виде карточек -->
             <h3>👥 Список курсантов</h3>
             <div id="cadetsGrid" class="cadets-grid"></div>
 
-            <!-- Блок с оценками выбранного курсанта -->
             <div id="gradesBlock" style="display: none;">
                 <h2 id="selectedCadetName"></h2>
                 <table id="gradesTable">
                     <thead>
-                        <tr><th>Предмет</th><th>Оценки</th><th>Средний балл</th><th>Действие</th></tr>
+                        <tr><th>Предмет</th><th>Оценки</th><th>Средний балл</th><th>Долги</th><th>Действие</th></tr>
                     </thead>
                     <tbody id="gradesBody"></tbody>
                 </table>
@@ -61,23 +60,39 @@
                     </select>
                     <input type="number" id="newGrade" min="2" max="5" placeholder="Оценка 2-5">
                     <button id="addGradeBtn">Поставить оценку</button>
+                    <button id="showTaskModalBtn" style="background:#f39c12;">📋 Управление отработками</button>
                 </div>
             </div>
         </div>
 
-        <!-- ПАНЕЛЬ КУРСАНТА (только просмотр) -->
+        <!-- Панель курсанта -->
         <div id="cadetPanel" style="display: none;">
             <div class="header-flex">
                 <h1>📘 Дневник курсанта</h1>
                 <button id="logoutCadet" class="logout">Выйти</button>
             </div>
             <div id="cadetInfo"></div>
-            <table id="cadetGrades">
+            <h3>Мои оценки</h3>
+            <table id="cadetGradesTable">
                 <thead><tr><th>Предмет</th><th>Оценки</th><th>Средний балл</th></tr></thead>
                 <tbody id="cadetGradesBody"></tbody>
             </table>
+            <h3>Мои отработки</h3>
+            <div id="cadetTasksList"></div>
         </div>
     </div>
+
+    <!-- Модальное окно для отработок (преподаватель) -->
+    <div id="taskModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h3>📋 Отработки курсанта</h3>
+            <div id="tasksList"></div>
+            <input type="text" id="newTaskText" placeholder="Описание отработки">
+            <button id="assignTaskBtn">Назначить</button>
+        </div>
+    </div>
+
     <script src="script.js"></script>
 </body>
 </html>

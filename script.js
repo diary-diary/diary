@@ -1,55 +1,65 @@
-// ----- НАЧАЛЬНЫЕ ДАННЫЕ -----
-let users = [];      // массив пользователей
+// ------------------- РАБОТА С ХРАНИЛИЩЕМ -------------------
+const STORAGE_KEY = "diary_app_data";
+
+// Загрузка данных из localStorage
+function loadData() {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored) {
+        return JSON.parse(stored);
+    } else {
+        // Начальные данные при первом запуске
+        return {
+            users: [
+                {
+                    id: "t1",
+                    login: "teacher",
+                    password: "123",
+                    role: "teacher",
+                    name: "Преподаватель"
+                },
+                {
+                    id: "c1",
+                    login: "cadet",
+                    password: "123",
+                    role: "cadet",
+                    name: "Иван",
+                    surname: "Иванов",
+                    class: "9А",
+                    grades: [
+                        { subject: "Военно Тактическая Подготовка", grades: [5,4,5] },
+                        { subject: "Русский язык", grades: [4,3,5] },
+                        { subject: "Юридический", grades: [4,5,4] }
+                    ]
+                }
+            ]
+        };
+    }
+}
+
+// Сохранение данных в localStorage
+function saveData(data) {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+}
+
+// Глобальный объект данных
+let appData = loadData();
+let users = appData.users;
 let currentUser = null;
 let currentCadetId = null;
 
-// Предметы по умолчанию
 const subjects = ["Военно Тактическая Подготовка", "Русский язык", "Юридический"];
 
-// Инициализация данных (если нет в localStorage)
-function initData() {
-    const stored = localStorage.getItem("diary_app");
-    if (stored) {
-        users = JSON.parse(stored);
-        return;
-    }
-    // Первый запуск: создаём преподавателя и одного курсанта
-    users = [
-        {
-            id: "t1",
-            login: "teacher",
-            password: "123",
-            role: "teacher",
-            name: "Преподаватель"
-        },
-        {
-            id: "c1",
-            login: "cadet",
-            password: "123",
-            role: "cadet",
-            name: "Иван",
-            surname: "Иванов",
-            class: "9А",
-            grades: [
-                { subject: "Военно Тактическая Подготовка", grades: [5,4,5] },
-                { subject: "Русский язык", grades: [4,3,5] },
-                { subject: "Юридический", grades: [4,5,4] }
-            ]
-        }
-    ];
-    saveData();
-}
-
-function saveData() {
-    localStorage.setItem("diary_app", JSON.stringify(users));
-}
-
-// Найти курсанта по id
+// Вспомогательные функции
 function getCadetById(id) {
     return users.find(u => u.id === id && u.role === "cadet");
 }
 
-// Добавить курсанта
+function saveUsersToStorage() {
+    appData.users = users;
+    saveData(appData);
+}
+
+// Добавление курсанта
 function addCadet(name, surname, className, login, password) {
     if (users.some(u => u.login === login)) {
         alert("Логин уже занят!");
@@ -67,41 +77,41 @@ function addCadet(name, surname, className, login, password) {
         grades: subjects.map(s => ({ subject: s, grades: [] }))
     };
     users.push(newCadet);
-    saveData();
+    saveUsersToStorage();
     return true;
 }
 
-// Добавить оценку курсанту
+// Добавление оценки
 function addGradeToCadet(cadetId, subjectName, grade) {
     const cadet = getCadetById(cadetId);
     if (!cadet) return false;
     const subj = cadet.grades.find(g => g.subject === subjectName);
     if (subj && grade >= 2 && grade <= 5) {
         subj.grades.push(parseInt(grade));
-        saveData();
+        saveUsersToStorage();
         return true;
     }
     return false;
 }
 
-// Удалить последнюю оценку
+// Удаление последней оценки
 function removeLastGrade(cadetId, subjectName) {
     const cadet = getCadetById(cadetId);
     if (!cadet) return;
     const subj = cadet.grades.find(g => g.subject === subjectName);
     if (subj && subj.grades.length > 0) {
         subj.grades.pop();
-        saveData();
+        saveUsersToStorage();
     }
 }
 
-// Вычисление среднего
+// Средний балл
 function avg(grades) {
     if (!grades.length) return "—";
     return (grades.reduce((a,b)=>a+b,0)/grades.length).toFixed(1);
 }
 
-// Отрисовка таблицы для преподавателя
+// ------------------- ОТРИСОВКА -------------------
 function renderTeacherGrades(cadet) {
     const tbody = document.getElementById("gradesBody");
     tbody.innerHTML = "";
@@ -109,7 +119,6 @@ function renderTeacherGrades(cadet) {
     cadet.grades.forEach(subj => {
         const row = tbody.insertRow();
         row.insertCell(0).innerText = subj.subject;
-        // Оценки
         const gradesCell = row.insertCell(1);
         const container = document.createElement("div");
         subj.grades.forEach(g => {
@@ -120,20 +129,19 @@ function renderTeacherGrades(cadet) {
         });
         gradesCell.appendChild(container);
         row.insertCell(2).innerText = avg(subj.grades);
-        // Кнопка удалить последнюю
         const delBtn = document.createElement("button");
         delBtn.innerText = "❌";
         delBtn.style.margin = "0";
         delBtn.onclick = () => {
             removeLastGrade(cadet.id, subj.subject);
-            renderTeacherGrades(getCadetById(cadet.id));
+            const updated = getCadetById(cadet.id);
+            renderTeacherGrades(updated);
         };
         const actionCell = row.insertCell(3);
         actionCell.appendChild(delBtn);
     });
 }
 
-// Отрисовка для курсанта
 function renderCadetGrades(cadet) {
     const tbody = document.getElementById("cadetGradesBody");
     tbody.innerHTML = "";
@@ -153,7 +161,6 @@ function renderCadetGrades(cadet) {
     });
 }
 
-// Обновить выпадающий список курсантов
 function updateCadetSelect() {
     const select = document.getElementById("cadetSelect");
     select.innerHTML = '<option value="">-- Выберите --</option>';
@@ -166,7 +173,7 @@ function updateCadetSelect() {
     });
 }
 
-// ----- УПРАВЛЕНИЕ ЭКРАНАМИ -----
+// ------------------- УПРАВЛЕНИЕ ЭКРАНАМИ -------------------
 function showLogin() {
     document.getElementById("login-form").style.display = "block";
     document.getElementById("teacherPanel").style.display = "none";
@@ -190,7 +197,7 @@ function showCadet(cadet) {
     renderCadetGrades(cadet);
 }
 
-// ----- АВТОРИЗАЦИЯ -----
+// ------------------- АВТОРИЗАЦИЯ -------------------
 function login(login, password) {
     const user = users.find(u => u.login === login && u.password === password);
     if (!user) {
@@ -206,9 +213,8 @@ function login(login, password) {
     return true;
 }
 
-// ----- ЗАПУСК ПРИ ЗАГРУЗКЕ СТРАНИЦЫ -----
+// ------------------- ЗАПУСК ПРИ ЗАГРУЗКЕ -------------------
 document.addEventListener("DOMContentLoaded", () => {
-    initData();
     showLogin();
 
     // Кнопка входа
@@ -218,7 +224,7 @@ document.addEventListener("DOMContentLoaded", () => {
         login(log, pass);
     };
 
-    // Выход для преподавателя
+    // Выход
     document.getElementById("logoutTeacher").onclick = () => {
         currentUser = null;
         showLogin();
@@ -247,6 +253,8 @@ document.addEventListener("DOMContentLoaded", () => {
             document.getElementById("newClass").value = "";
             document.getElementById("newLogin").value = "";
             document.getElementById("newPass").value = "";
+        } else {
+            alert("Ошибка добавления");
         }
     };
 

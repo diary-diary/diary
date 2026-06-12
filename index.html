@@ -2,275 +2,589 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>Электронный дневник</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Электронный дневник - Таблица оценок</title>
     <style>
-        * { box-sizing: border-box; font-family: system-ui; }
-        body { background: #eef2f7; padding: 20px; }
-        .container { max-width: 1300px; margin: 0 auto; background: white; border-radius: 24px; padding: 20px 30px; }
-        h1 { color: #1e4663; }
-        button { background: #1e4663; color: white; border: none; padding: 8px 16px; border-radius: 12px; cursor: pointer; }
-        input, select { padding: 8px; margin: 5px; border-radius: 12px; border: 1px solid #ccc; }
-        .cadet-card { background: #f0f4f9; padding: 15px; margin: 10px; border-radius: 16px; cursor: pointer; display: inline-block; width: 250px; }
-        .grade { display: inline-block; background: #e0e7ff; padding: 4px 8px; border-radius: 20px; margin: 2px; }
-        table { width: 100%; border-collapse: collapse; }
-        th, td { padding: 8px; text-align: left; border-bottom: 1px solid #ddd; }
-        th { background: #1e4663; color: white; }
+        * {
+            box-sizing: border-box;
+            font-family: system-ui, 'Segoe UI', Roboto, sans-serif;
+        }
+        body {
+            background: #eef2f7;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 24px;
+            padding: 20px 30px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            overflow-x: auto;
+        }
+        h1 {
+            color: #1e4663;
+            margin-top: 0;
+        }
+        .header-flex {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .login-card {
+            max-width: 400px;
+            margin: 50px auto;
+            background: #f9fafc;
+            padding: 30px;
+            border-radius: 24px;
+            text-align: center;
+        }
+        .login-card input {
+            width: 100%;
+            padding: 12px;
+            margin: 8px 0;
+            border-radius: 12px;
+            border: 1px solid #ccc;
+            font-size: 16px;
+        }
+        .login-card button {
+            width: 100%;
+            padding: 12px;
+            background: #1e4663;
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        .logout-btn {
+            background: #b33;
+            padding: 8px 16px;
+            border-radius: 20px;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        .add-cadet-form {
+            background: #f4f9fe;
+            padding: 15px 20px;
+            border-radius: 20px;
+            margin: 20px 0;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: flex-end;
+        }
+        .add-cadet-form input {
+            padding: 8px 12px;
+            border-radius: 12px;
+            border: 1px solid #ccc;
+        }
+        .add-cadet-form button {
+            background: #27ae60;
+            padding: 8px 20px;
+        }
+        /* Таблица оценок */
+        .grades-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            font-size: 14px;
+        }
+        .grades-table th, .grades-table td {
+            border: 1px solid #ddd;
+            padding: 10px 8px;
+            text-align: center;
+            vertical-align: middle;
+        }
+        .grades-table th {
+            background: #1e4663;
+            color: white;
+            font-weight: 600;
+            position: sticky;
+            top: 0;
+        }
+        .grades-table th:first-child, .grades-table td:first-child {
+            position: sticky;
+            left: 0;
+            background: white;
+            font-weight: bold;
+            text-align: left;
+            min-width: 180px;
+        }
+        .grades-table th:first-child {
+            background: #1e4663;
+            color: white;
+            z-index: 2;
+        }
+        .grades-table td:first-child {
+            background: #f8fafd;
+            font-weight: 600;
+        }
+        .grade-cell {
+            cursor: pointer;
+            transition: 0.1s;
+            min-width: 60px;
+        }
+        .grade-cell:hover {
+            background: #e6f0ff;
+        }
+        .grade-value {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 20px;
+            background: #e0e7ff;
+            min-width: 35px;
+        }
+        .grade-input {
+            width: 50px;
+            text-align: center;
+            padding: 4px;
+            border-radius: 12px;
+            border: 1px solid #1e4663;
+            font-size: 14px;
+        }
+        .avg-cell {
+            background: #f0f4e8;
+            font-weight: bold;
+        }
+        .error {
+            color: red;
+            margin-top: 10px;
+        }
+        .hint {
+            font-size: 12px;
+            color: #666;
+            text-align: center;
+            margin-top: 15px;
+        }
+        .status {
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            background: #27ae60;
+            color: white;
+        }
+        @media (max-width: 768px) {
+            .container { padding: 15px; }
+            .grades-table th, .grades-table td { padding: 6px 4px; font-size: 12px; }
+            .grade-input { width: 40px; }
+        }
     </style>
 </head>
 <body>
-<div class="container" id="app">
-    <div id="loginSection">
-        <h1>📓 Электронный дневник</h1>
-        <div style="max-width:400px; margin:30px auto; text-align:center">
-            <input type="text" id="login" placeholder="Логин" style="width:100%"><br>
-            <input type="password" id="password" placeholder="Пароль" style="width:100%"><br>
+<div class="container">
+    <div id="status" class="status">✅ Готово</div>
+
+    <!-- Форма входа -->
+    <div id="loginForm">
+        <div class="login-card">
+            <h1>📓 Электронный дневник</h1>
+            <input type="text" id="loginInput" placeholder="Логин">
+            <input type="password" id="passwordInput" placeholder="Пароль">
             <button id="loginBtn">Войти</button>
-            <p style="font-size:12px; margin-top:20px">Преподаватель: teacher / 123<br>Курсант: cadet / 123</p>
-        </div>
-    </div>
-    <div id="teacherSection" style="display:none">
-        <h1>👨‍🏫 Панель преподавателя</h1>
-        <button id="logoutBtn">Выйти</button>
-        <hr>
-        <h3>Добавить курсанта</h3>
-        <input type="text" id="newName" placeholder="Имя">
-        <input type="text" id="newSurname" placeholder="Фамилия">
-        <input type="text" id="newLogin" placeholder="Логин">
-        <input type="password" id="newPass" placeholder="Пароль">
-        <button id="addCadetBtn">Добавить</button>
-        <h3>Список курсантов</h3>
-        <div id="cadetsList"></div>
-        <div id="gradesBlock" style="display:none; margin-top:30px">
-            <h2 id="selectedName"></h2>
-            <table id="gradesTable"><thead><tr><th>Предмет</th><th>Оценки</th><th>Средний</th><th></th></tr></thead><tbody id="gradesBody"></tbody></table>
-            <div style="margin-top:20px">
-                <select id="subjectSelect"><option>Военно Тактическая Подготовка</option><option>Русский язык</option><option>Юридический</option></select>
-                <input type="number" id="gradeInput" min="2" max="5" placeholder="2-5">
-                <button id="addGradeBtn">Поставить оценку</button>
+            <div id="loginError" class="error"></div>
+            <div class="hint">
+                👨‍🏫 Преподаватель: <strong>teacher</strong> / <strong>123</strong><br>
+                👨‍🎓 Курсант: <strong>cadet</strong> / <strong>123</strong>
             </div>
         </div>
     </div>
-    <div id="cadetSection" style="display:none">
-        <h1>📘 Дневник курсанта</h1>
-        <button id="logoutCadetBtn">Выйти</button>
-        <div id="cadetInfo"></div>
-        <table id="cadetGradesTable"><thead><tr><th>Предмет</th><th>Оценки</th><th>Средний</th></tr></thead><tbody id="cadetGradesBody"></tbody></table>
+
+    <!-- Панель преподавателя -->
+    <div id="teacherPanel" style="display: none;">
+        <div class="header-flex">
+            <h1>📊 Электронный дневник</h1>
+            <button id="logoutTeacher" class="logout-btn">🚪 Выйти</button>
+        </div>
+
+        <!-- Форма добавления курсанта -->
+        <div class="add-cadet-form">
+            <input type="text" id="newName" placeholder="Имя">
+            <input type="text" id="newSurname" placeholder="Фамилия">
+            <input type="text" id="newLogin" placeholder="Логин">
+            <input type="password" id="newPass" placeholder="Пароль">
+            <button id="addCadetBtn">➕ Добавить курсанта</button>
+        </div>
+
+        <!-- Таблица оценок -->
+        <div style="overflow-x: auto;">
+            <table class="grades-table" id="gradesTable">
+                <thead id="tableHeader">
+                    <tr>
+                        <th>👤 ФИО курсанта</th>
+                        <!-- предметы добавятся из JS -->
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                    <!-- курсанты и оценки добавятся из JS -->
+                </tbody>
+            </table>
+        </div>
+        <div class="hint">
+            💡 Кликните по оценке, чтобы изменить её (от 2 до 5).<br>
+            📊 В последнем столбце показан средний балл.
+        </div>
+    </div>
+
+    <!-- Панель курсанта (только просмотр) -->
+    <div id="cadetPanel" style="display: none;">
+        <div class="header-flex">
+            <h1>📘 Дневник курсанта</h1>
+            <button id="logoutCadet" class="logout-btn">🚪 Выйти</button>
+        </div>
+        <div id="cadetInfo" style="background:#e9f2fa; padding:12px; border-radius:16px; margin:15px 0;"></div>
+        <div style="overflow-x: auto;">
+            <table class="grades-table" id="cadetTableView">
+                <thead id="cadetTableHeader">
+                    <tr><th>Предмет</th><th>Оценки</th><th>Средний балл</th></tr>
+                </thead>
+                <tbody id="cadetTableBody"></tbody>
+            </table>
+        </div>
     </div>
 </div>
+
 <script>
-// ============================================
-// ЭЛЕКТРОННЫЙ ДНЕВНИК - ЛОКАЛЬНАЯ ВЕРСИЯ
-// НЕТ JSONbin! НЕТ Firebase! НЕТ сторонних сайтов!
-// ============================================
-
-const STORAGE_KEY = "diary_clean";
-
-function getDefaultData() {
-    return {
-        users: [
-            { id: "t1", login: "teacher", password: "123", role: "teacher", name: "Преподаватель" },
-            { id: "c1", login: "cadet", password: "123", role: "cadet", name: "Иван", surname: "Иванов",
-              grades: [
-                  { subject: "Военно Тактическая Подготовка", grades: [5,4,5] },
-                  { subject: "Русский язык", grades: [4,3,5] },
-                  { subject: "Юридический", grades: [4,5,4] }
-              ] }
-        ],
-        nextId: 2
-    };
-}
-
-let appData = JSON.parse(localStorage.getItem(STORAGE_KEY)) || getDefaultData();
-let currentUser = null;
-let selectedCadetId = null;
-
-function saveData() {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(appData));
-}
-
-function getCadet(id) {
-    return appData.users.find(u => u.id === id && u.role === 'cadet');
-}
-
-function getCadets() {
-    return appData.users.filter(u => u.role === 'cadet');
-}
-
-function addCadet(name, surname, login, password) {
-    if (appData.users.some(u => u.login === login)) {
-        alert("Логин занят");
-        return false;
+    // ============================================
+    // ЭЛЕКТРОННЫЙ ДНЕВНИК - ТАБЛИЦА ОЦЕНОК
+    // ============================================
+    
+    const STORAGE_KEY = "diary_table_app";
+    
+    // Список предметов
+    const SUBJECTS = ["Военно Тактическая Подготовка", "Русский язык", "Юридический"];
+    
+    // Начальные данные
+    function getDefaultData() {
+        return {
+            users: [
+                { id: "t1", login: "teacher", password: "123", role: "teacher", name: "Преподаватель" },
+                { id: "c1", login: "cadet", password: "123", role: "cadet", name: "Иван", surname: "Иванов",
+                  grades: {
+                      "Военно Тактическая Подготовка": [5,4,5],
+                      "Русский язык": [4,3,5],
+                      "Юридический": [4,5,4]
+                  }
+                }
+            ],
+            nextId: 2
+        };
     }
-    const newId = "c" + appData.nextId++;
-    appData.users.push({
-        id: newId, login, password, role: "cadet", name, surname,
-        grades: [
-            { subject: "Военно Тактическая Подготовка", grades: [] },
-            { subject: "Русский язык", grades: [] },
-            { subject: "Юридический", grades: [] }
-        ]
-    });
-    saveData();
-    return true;
-}
-
-function addGrade(cadetId, subjectName, grade) {
-    const cadet = getCadet(cadetId);
-    const subj = cadet.grades.find(g => g.subject === subjectName);
-    if (subj && grade >= 2 && grade <= 5) {
-        subj.grades.push(parseInt(grade));
+    
+    // Загрузка данных
+    let appData = JSON.parse(localStorage.getItem(STORAGE_KEY)) || getDefaultData();
+    
+    function saveData() {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(appData));
+        document.getElementById('status').textContent = '💾 Сохранено';
+        document.getElementById('status').style.background = '#f39c12';
+        setTimeout(() => {
+            document.getElementById('status').textContent = '✅ Готово';
+            document.getElementById('status').style.background = '#27ae60';
+        }, 1000);
+    }
+    
+    // Вспомогательные функции
+    function getCadets() {
+        return appData.users.filter(u => u.role === 'cadet');
+    }
+    
+    function getCadetById(id) {
+        return appData.users.find(u => u.id === id);
+    }
+    
+    function getCadetGrades(cadet) {
+        return cadet.grades || {};
+    }
+    
+    // Получить все оценки курсанта (плоским списком)
+    function getAllGrades(cadet) {
+        const grades = [];
+        if (cadet.grades) {
+            for (const subject of SUBJECTS) {
+                if (cadet.grades[subject]) {
+                    grades.push(...cadet.grades[subject]);
+                }
+            }
+        }
+        return grades;
+    }
+    
+    // Средний балл
+    function avg(gradesArray) {
+        if (!gradesArray || gradesArray.length === 0) return "—";
+        const sum = gradesArray.reduce((a, b) => a + b, 0);
+        return (sum / gradesArray.length).toFixed(1);
+    }
+    
+    // Добавление курсанта
+    function addCadet(name, surname, login, password) {
+        if (appData.users.some(u => u.login === login)) {
+            alert("Логин уже занят!");
+            return false;
+        }
+        const newId = "c" + appData.nextId++;
+        const newCadet = {
+            id: newId,
+            login: login,
+            password: password,
+            role: "cadet",
+            name: name,
+            surname: surname,
+            grades: {}
+        };
+        // Инициализируем пустые массивы для каждого предмета
+        for (const subject of SUBJECTS) {
+            newCadet.grades[subject] = [];
+        }
+        appData.users.push(newCadet);
         saveData();
         return true;
     }
-    return false;
-}
-
-function avg(grades) {
-    if (!grades.length) return "—";
-    return (grades.reduce((a,b)=>a+b,0)/grades.length).toFixed(1);
-}
-
-function renderCadetsList() {
-    const container = document.getElementById("cadetsList");
-    const cadets = getCadets();
-    container.innerHTML = "";
-    cadets.forEach(cadet => {
-        let allGrades = [];
-        cadet.grades.forEach(s => allGrades.push(...s.grades));
-        const card = document.createElement("div");
-        card.className = "cadet-card";
-        card.innerHTML = `<strong>${cadet.surname} ${cadet.name}</strong><br>📋 ${cadet.login}<br>⭐ Средний: ${allGrades.length ? avg(allGrades) : "—"}<br>📊 Оценок: ${allGrades.length}`;
-        card.onclick = () => {
-            document.querySelectorAll(".cadet-card").forEach(c => c.style.background = "#f0f4f9");
-            card.style.background = "#d4e4ff";
-            selectedCadetId = cadet.id;
-            document.getElementById("gradesBlock").style.display = "block";
-            document.getElementById("selectedName").innerHTML = `${cadet.surname} ${cadet.name}`;
-            renderGradesTable(cadet.id);
-        };
-        container.appendChild(card);
-    });
-}
-
-function renderGradesTable(cadetId) {
-    const cadet = getCadet(cadetId);
-    const tbody = document.getElementById("gradesBody");
-    tbody.innerHTML = "";
-    cadet.grades.forEach(subj => {
-        const row = tbody.insertRow();
-        row.insertCell(0).innerText = subj.subject;
-        const cell = row.insertCell(1);
-        subj.grades.forEach(g => {
-            const span = document.createElement("span");
-            span.className = "grade";
-            span.innerText = g;
-            cell.appendChild(span);
-        });
-        row.insertCell(2).innerText = avg(subj.grades);
-        const delBtn = document.createElement("button");
-        delBtn.innerText = "❌";
-        delBtn.onclick = () => {
-            subj.grades.pop();
+    
+    // Обновление оценки (добавление новой)
+    function addGrade(cadetId, subject, grade) {
+        const cadet = getCadetById(cadetId);
+        if (cadet && cadet.grades && grade >= 2 && grade <= 5) {
+            if (!cadet.grades[subject]) cadet.grades[subject] = [];
+            cadet.grades[subject].push(parseInt(grade));
             saveData();
-            renderGradesTable(cadetId);
-            renderCadetsList();
-        };
-        row.insertCell(3).appendChild(delBtn);
-    });
-}
-
-function renderCadetPanel(cadet) {
-    document.getElementById("cadetInfo").innerHTML = `<p><strong>${cadet.surname} ${cadet.name}</strong></p>`;
-    const tbody = document.getElementById("cadetGradesBody");
-    tbody.innerHTML = "";
-    cadet.grades.forEach(subj => {
-        const row = tbody.insertRow();
-        row.insertCell(0).innerText = subj.subject;
-        const cell = row.insertCell(1);
-        subj.grades.forEach(g => {
-            const span = document.createElement("span");
-            span.className = "grade";
-            span.innerText = g;
-            cell.appendChild(span);
+            return true;
+        }
+        return false;
+    }
+    
+    // Удаление последней оценки по предмету
+    function removeLastGrade(cadetId, subject) {
+        const cadet = getCadetById(cadetId);
+        if (cadet && cadet.grades && cadet.grades[subject] && cadet.grades[subject].length > 0) {
+            cadet.grades[subject].pop();
+            saveData();
+            return true;
+        }
+        return false;
+    }
+    
+    // Замена оценки (редактирование) - удаляем последнюю и добавляем новую
+    function updateGrade(cadetId, subject, newGrade) {
+        if (newGrade >= 2 && newGrade <= 5) {
+            removeLastGrade(cadetId, subject);
+            addGrade(cadetId, subject, newGrade);
+            return true;
+        }
+        return false;
+    }
+    
+    // Получить отображение оценок для ячейки (список кружков)
+    function getGradesDisplay(gradesArray, cadetId, subject) {
+        if (!gradesArray || gradesArray.length === 0) {
+            return `<span class="grade-value" style="background:#eee; color:#999;">—</span>`;
+        }
+        let html = '';
+        for (let i = 0; i < gradesArray.length; i++) {
+            html += `<span class="grade-value" style="margin:0 2px;">${gradesArray[i]}</span>`;
+        }
+        return html;
+    }
+    
+    // Рендер таблицы для преподавателя
+    function renderTeacherTable() {
+        const thead = document.getElementById("tableHeader");
+        const tbody = document.getElementById("tableBody");
+        const cadets = getCadets();
+        
+        // Заголовок
+        let headerHtml = `<tr><th>👤 ФИО курсанта</th>`;
+        for (const subject of SUBJECTS) {
+            headerHtml += `<th>${subject}</th>`;
+        }
+        headerHtml += `<th>📊 Средний балл</th><th>⚙️</th></tr>`;
+        thead.innerHTML = headerHtml;
+        
+        // Тело таблицы
+        tbody.innerHTML = "";
+        for (const cadet of cadets) {
+            const allGrades = getAllGrades(cadet);
+            const totalAvg = avg(allGrades);
+            
+            let rowHtml = `<tr>
+                <td style="text-align:left; font-weight:bold;">${cadet.surname} ${cadet.name}<br><span style="font-size:11px; color:#666;">${cadet.login}</span></td>`;
+            
+            for (const subject of SUBJECTS) {
+                const subjectGrades = cadet.grades[subject] || [];
+                const lastGrade = subjectGrades.length > 0 ? subjectGrades[subjectGrades.length - 1] : null;
+                
+                rowHtml += `<td class="grade-cell" data-cadet-id="${cadet.id}" data-subject="${subject}" style="cursor:pointer;">
+                    <div class="grades-preview" style="display:flex; flex-wrap:wrap; gap:3px; justify-content:center;">
+                        ${getGradesDisplay(subjectGrades, cadet.id, subject)}
+                    </div>
+                    <div style="margin-top:5px;">
+                        <input type="number" class="grade-input" data-cadet-id="${cadet.id}" data-subject="${subject}" 
+                               placeholder="2-5" min="2" max="5" step="1" style="width:55px; text-align:center;">
+                        <button class="add-grade-btn" data-cadet-id="${cadet.id}" data-subject="${subject}" style="font-size:11px; padding:2px 6px;">+</button>
+                    </div>
+                </td>`;
+            }
+            
+            rowHtml += `<td class="avg-cell" style="font-weight:bold; background:#f0f4e8;">${totalAvg}</td>
+                <td><button class="remove-cadet-btn" data-cadet-id="${cadet.id}" style="background:#e74c3c; font-size:11px; padding:4px 8px;">🗑️</button></td>
+            </tr>`;
+            tbody.innerHTML += rowHtml;
+        }
+        
+        // Добавляем обработчики для кнопок добавления оценок
+        document.querySelectorAll('.add-grade-btn').forEach(btn => {
+            btn.onclick = (e) => {
+                e.stopPropagation();
+                const cadetId = btn.dataset.cadetId;
+                const subject = btn.dataset.subject;
+                const input = document.querySelector(`.grade-input[data-cadet-id="${cadetId}"][data-subject="${subject}"]`);
+                const grade = parseInt(input.value);
+                if (!isNaN(grade) && grade >= 2 && grade <= 5) {
+                    addGrade(cadetId, subject, grade);
+                    renderTeacherTable();
+                } else {
+                    alert("Оценка должна быть от 2 до 5");
+                }
+                input.value = "";
+            };
         });
-        row.insertCell(2).innerText = avg(subj.grades);
+        
+        // Добавляем обработчики для удаления курсанта
+        document.querySelectorAll('.remove-cadet-btn').forEach(btn => {
+            btn.onclick = () => {
+                if (confirm("Удалить курсанта?")) {
+                    const cadetId = btn.dataset.cadetId;
+                    appData.users = appData.users.filter(u => u.id !== cadetId);
+                    saveData();
+                    renderTeacherTable();
+                }
+            };
+        });
+    }
+    
+    // Панель курсанта (просмотр своих оценок в виде таблицы)
+    function renderCadetPanel(cadet) {
+        document.getElementById("cadetInfo").innerHTML = `<p><strong>${cadet.surname} ${cadet.name}</strong> (${cadet.login})</p>`;
+        const tbody = document.getElementById("cadetTableBody");
+        tbody.innerHTML = "";
+        
+        for (const subject of SUBJECTS) {
+            const subjectGrades = cadet.grades[subject] || [];
+            const row = tbody.insertRow();
+            row.insertCell(0).innerHTML = `<strong>${subject}</strong>`;
+            
+            // Оценки в виде кружков
+            const gradesCell = row.insertCell(1);
+            const container = document.createElement("div");
+            container.style.display = "flex";
+            container.style.flexWrap = "wrap";
+            container.style.gap = "5px";
+            for (const g of subjectGrades) {
+                const span = document.createElement("span");
+                span.className = "grade-value";
+                span.innerText = g;
+                container.appendChild(span);
+            }
+            if (subjectGrades.length === 0) {
+                container.innerHTML = "<span style='color:#999;'>—</span>";
+            }
+            gradesCell.appendChild(container);
+            
+            row.insertCell(2).innerHTML = `<strong>${avg(subjectGrades)}</strong>`;
+        }
+        
+        // Добавляем строку со средним баллом
+        const allGrades = getAllGrades(cadet);
+        const totalAvg = avg(allGrades);
+        const totalRow = tbody.insertRow();
+        totalRow.style.background = "#e9f2fa";
+        totalRow.insertCell(0).innerHTML = "<strong>📊 ИТОГО</strong>";
+        totalRow.insertCell(1).innerHTML = `<span>Всего оценок: ${allGrades.length}</span>`;
+        totalRow.insertCell(2).innerHTML = `<strong style="font-size:18px;">${totalAvg}</strong>`;
+    }
+    
+    // Авторизация
+    let currentUser = null;
+    
+    function login(loginVal, passwordVal) {
+        const user = appData.users.find(u => u.login === loginVal && u.password === passwordVal);
+        if (!user) {
+            document.getElementById("loginError").innerText = "Неверный логин или пароль!";
+            return false;
+        }
+        currentUser = user;
+        document.getElementById("loginForm").style.display = "none";
+        
+        if (user.role === "teacher") {
+            document.getElementById("teacherPanel").style.display = "block";
+            document.getElementById("cadetPanel").style.display = "none";
+            renderTeacherTable();
+        } else {
+            document.getElementById("teacherPanel").style.display = "none";
+            document.getElementById("cadetPanel").style.display = "block";
+            renderCadetPanel(user);
+        }
+        return true;
+    }
+    
+    function logout() {
+        currentUser = null;
+        document.getElementById("loginForm").style.display = "block";
+        document.getElementById("teacherPanel").style.display = "none";
+        document.getElementById("cadetPanel").style.display = "none";
+        document.getElementById("loginError").innerText = "";
+        document.getElementById("loginInput").value = "";
+        document.getElementById("passwordInput").value = "";
+    }
+    
+    // ============================================
+    // ЗАПУСК
+    // ============================================
+    document.addEventListener("DOMContentLoaded", () => {
+        document.getElementById("loginForm").style.display = "block";
+        document.getElementById("teacherPanel").style.display = "none";
+        document.getElementById("cadetPanel").style.display = "none";
+        
+        // Вход
+        document.getElementById("loginBtn").onclick = () => {
+            login(document.getElementById("loginInput").value.trim(), document.getElementById("passwordInput").value.trim());
+        };
+        
+        // Выход
+        document.getElementById("logoutTeacher").onclick = logout;
+        document.getElementById("logoutCadet").onclick = logout;
+        
+        // Добавление курсанта
+        document.getElementById("addCadetBtn").onclick = () => {
+            const name = document.getElementById("newName").value.trim();
+            const surname = document.getElementById("newSurname").value.trim();
+            const login = document.getElementById("newLogin").value.trim();
+            const pass = document.getElementById("newPass").value.trim();
+            
+            if (!name || !surname || !login || !pass) {
+                alert("Заполните все поля!");
+                return;
+            }
+            
+            if (addCadet(name, surname, login, pass)) {
+                alert("Курсант добавлен!");
+                renderTeacherTable();
+                document.getElementById("newName").value = "";
+                document.getElementById("newSurname").value = "";
+                document.getElementById("newLogin").value = "";
+                document.getElementById("newPass").value = "";
+            }
+        };
     });
-}
-
-function login(loginVal, passVal) {
-    const user = appData.users.find(u => u.login === loginVal && u.password === passVal);
-    if (!user) {
-        alert("Неверный логин или пароль");
-        return;
-    }
-    currentUser = user;
-    document.getElementById("loginSection").style.display = "none";
-    if (user.role === "teacher") {
-        document.getElementById("teacherSection").style.display = "block";
-        document.getElementById("cadetSection").style.display = "none";
-        renderCadetsList();
-    } else {
-        document.getElementById("teacherSection").style.display = "none";
-        document.getElementById("cadetSection").style.display = "block";
-        renderCadetPanel(user);
-    }
-}
-
-function logout() {
-    currentUser = null;
-    selectedCadetId = null;
-    document.getElementById("loginSection").style.display = "block";
-    document.getElementById("teacherSection").style.display = "none";
-    document.getElementById("cadetSection").style.display = "none";
-    document.getElementById("gradesBlock").style.display = "none";
-    document.getElementById("login").value = "";
-    document.getElementById("password").value = "";
-}
-
-document.getElementById("loginBtn").onclick = () => {
-    login(document.getElementById("login").value.trim(), document.getElementById("password").value.trim());
-};
-document.getElementById("logoutBtn").onclick = logout;
-document.getElementById("logoutCadetBtn").onclick = logout;
-
-document.getElementById("addCadetBtn").onclick = () => {
-    const name = document.getElementById("newName").value.trim();
-    const surname = document.getElementById("newSurname").value.trim();
-    const login = document.getElementById("newLogin").value.trim();
-    const pass = document.getElementById("newPass").value.trim();
-    if (!name || !surname || !login || !pass) {
-        alert("Заполните все поля");
-        return;
-    }
-    if (addCadet(name, surname, login, pass)) {
-        alert("Курсант добавлен!");
-        renderCadetsList();
-        document.getElementById("newName").value = "";
-        document.getElementById("newSurname").value = "";
-        document.getElementById("newLogin").value = "";
-        document.getElementById("newPass").value = "";
-    }
-};
-
-document.getElementById("addGradeBtn").onclick = () => {
-    if (!selectedCadetId) {
-        alert("Выберите курсанта");
-        return;
-    }
-    const grade = parseInt(document.getElementById("gradeInput").value);
-    if (isNaN(grade) || grade < 2 || grade > 5) {
-        alert("Оценка от 2 до 5");
-        return;
-    }
-    const subject = document.getElementById("subjectSelect").value;
-    if (addGrade(selectedCadetId, subject, grade)) {
-        document.getElementById("gradeInput").value = "";
-        renderGradesTable(selectedCadetId);
-        renderCadetsList();
-    }
-};
-
-console.log("✅ Дневник загружен. Версия без JSONbin");
 </script>
 </body>
 </html>

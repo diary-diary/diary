@@ -4,28 +4,77 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Электронный дневник</title>
-    <link rel="stylesheet" href="style.css">
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: system-ui, 'Segoe UI', sans-serif;
+        }
+        body {
+            background: #eef2f7;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1300px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 24px;
+            padding: 20px 30px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        h1, h2, h3 { color: #1e4663; }
+        .header-flex { display: flex; justify-content: space-between; align-items: center; }
+        .card { max-width: 400px; margin: 30px auto; background: #f9fafc; padding: 20px; border-radius: 20px; }
+        label { display: block; margin-top: 12px; font-weight: bold; }
+        input, select, button { padding: 8px 12px; margin: 5px 8px 5px 0; border-radius: 12px; border: 1px solid #ccc; }
+        button { background: #1e4663; color: white; border: none; cursor: pointer; }
+        button:hover { background: #0f2e46; }
+        .logout { background: #b33; }
+        .error { color: red; margin-top: 10px; }
+        .success { color: green; margin-top: 10px; }
+        .cadets-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; margin: 20px 0; }
+        .cadet-card { background: #f8fafd; border: 1px solid #dce5f0; border-radius: 20px; padding: 16px; cursor: pointer; transition: 0.2s; }
+        .cadet-card:hover { background: #e6f0ff; transform: translateY(-3px); }
+        .cadet-card.selected { background: #d4e4ff; border-color: #1e4663; }
+        .cadet-card h4 { margin: 0 0 8px 0; }
+        .cadet-card p { margin: 4px 0; font-size: 0.85rem; }
+        .grades-preview { margin: 8px 0; font-size: 0.8rem; background: #eef; padding: 5px; border-radius: 12px; }
+        .badge { background: #1e4663; color: white; padding: 2px 8px; border-radius: 20px; font-size: 0.75rem; display: inline-block; margin-top: 5px; }
+        table { width: 100%; border-collapse: collapse; margin: 15px 0; }
+        th, td { text-align: left; padding: 8px; border-bottom: 1px solid #ddd; }
+        th { background: #1e4663; color: white; }
+        .grade { display: inline-block; background: #e0e7ff; padding: 4px 8px; border-radius: 20px; margin-right: 5px; }
+        .add-cadet-form, .add-grade-form { background: #f4f9fe; padding: 15px; border-radius: 20px; margin: 15px 0; }
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); }
+        .modal-content { background: #fff; margin: 10% auto; padding: 20px; border-radius: 24px; width: 90%; max-width: 500px; }
+        .close { float: right; font-size: 28px; cursor: pointer; }
+        #syncStatus { position: fixed; bottom: 10px; right: 10px; padding: 5px 10px; border-radius: 20px; font-size: 12px; background: #eee; }
+        .syncing { background: #f39c12; color: white; }
+        .synced { background: #27ae60; color: white; }
+        .error-sync { background: #e74c3c; color: white; }
+    </style>
 </head>
 <body>
     <div class="container">
-        <!-- Форма входа -->
+        <div id="syncStatus">⏳ Загрузка...</div>
+
         <div id="loginForm">
             <h1>📓 Электронный дневник</h1>
             <div class="card">
                 <h2>Вход</h2>
                 <label>Логин:</label>
-                <input type="text" id="loginInput" placeholder="Логин">
+                <input type="text" id="loginInput" placeholder="teacher">
                 <label>Пароль:</label>
-                <input type="password" id="passwordInput" placeholder="Пароль">
+                <input type="password" id="passwordInput" placeholder="123">
                 <button id="loginBtn">Войти</button>
                 <div id="loginError" class="error"></div>
                 <hr>
-                <p class="hint">Преподаватели: <strong>teacher</strong> / <strong>123</strong> или <strong>teacher2</strong> / <strong>123</strong><br>
+                <p class="hint">Преподаватели: <strong>teacher</strong> / <strong>123</strong><br>
                 Курсант: <strong>cadet</strong> / <strong>123</strong></p>
+                <p class="hint">✅ Данные синхронизируются через GitHub</p>
             </div>
         </div>
 
-        <!-- Панель преподавателя -->
         <div id="teacherPanel" style="display: none;">
             <div class="header-flex">
                 <h1>👨‍🏫 Панель преподавателя</h1>
@@ -36,7 +85,7 @@
                 <h3>➕ Добавить курсанта</h3>
                 <input type="text" id="newName" placeholder="Имя">
                 <input type="text" id="newSurname" placeholder="Фамилия">
-                <input type="text" id="newLogin" placeholder="Логин">
+                <input type="text" id="newLogin" placeholder="Логин курсанта">
                 <input type="password" id="newPass" placeholder="Пароль">
                 <button id="addCadetBtn">Добавить</button>
             </div>
@@ -65,7 +114,6 @@
             </div>
         </div>
 
-        <!-- Панель курсанта -->
         <div id="cadetPanel" style="display: none;">
             <div class="header-flex">
                 <h1>📘 Дневник курсанта</h1>
@@ -82,7 +130,6 @@
         </div>
     </div>
 
-    <!-- Модальное окно для отработок -->
     <div id="taskModal" class="modal">
         <div class="modal-content">
             <span class="close">&times;</span>

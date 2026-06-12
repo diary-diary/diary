@@ -247,7 +247,7 @@
             <div id="loginError" class="error"></div>
             <div style="margin-top:28px; font-size:0.7rem; color:#6c84a0;">
                 🔐 Преподаватель: <strong>teacher</strong> / <strong>123</strong><br>
-                📡 Данные синхронизируются через GitHub (обновление в фоне)
+                📡 Данные синхронизируются через GitHub
             </div>
         </div>
     </div>
@@ -283,7 +283,7 @@
                 <span><div class="badge-small" style="background:#fecaca;"></div> ❌ Не пришёл</span>
                 <span><div class="badge-small" style="background:#fde68a;"></div> 📋 Отработка</span>
                 <span>🔴 Клик по оценке — удаление</span>
-                <span>🔄 Автосинхронизация раз в 5 секунд (фоновая)</span>
+                <span>🔄 Автосинхронизация раз в 5 секунд</span>
             </div>
         </div>
     </div>
@@ -291,13 +291,11 @@
 
 <script>
     // ============================================
-    // СИНХРОНИЗАЦИЯ ЧЕРЕЗ GITHUB (фоновая, без перезагрузки)
-    // СОХРАНЕНИЕ + АВТООБНОВЛЕНИЕ
+    // НАСТРОЙКИ GITHUB (ЗАМЕНИТЕ НА ВАШИ)
     // ============================================
-    
-    // ⚠️ ВАЖНО: Замените на ВАШИ данные из GitHub!
-    const GITHUB_USERNAME = "ВАШ_ЛОГИН";        // Ваш логин на GitHub
-    const GITHUB_REPO = "diary";                // Название репозитория
+    const GITHUB_USERNAME = "diary";                    // Ваш логин на GitHub
+    const GITHUB_REPO = "diary";                        // Название репозитория
+    const GITHUB_TOKEN = "ghp_XXXXX";                   // ВАШ ТОКЕН (ghp_...)
     // ============================================
     
     const GITHUB_API = `https://api.github.com/repos/${GITHUB_USERNAME}/${GITHUB_REPO}/contents/data.json`;
@@ -318,15 +316,12 @@
         setTimeout(() => {
             if (document.getElementById('status')?.className === `status ${type}`) {
                 const st = document.getElementById('status');
-                if (st) {
-                    st.className = 'status';
-                    st.textContent = '✨ Готово';
-                }
+                if (st) { st.className = 'status'; st.textContent = '✨ Готово'; }
             }
         }, 1500);
     }
     
-    // Загрузка данных с GitHub (фоновая)
+    // Загрузка с GitHub
     async function loadFromGitHub(silent = false) {
         if (isLoading) return false;
         isLoading = true;
@@ -334,7 +329,6 @@
             const res = await fetch(GITHUB_RAW + '?t=' + Date.now());
             if (res.ok) {
                 const newData = await res.json();
-                // Если данные изменились, обновляем таблицу
                 if (JSON.stringify(appData) !== JSON.stringify(newData)) {
                     appData = newData;
                     if (currentUser && !silent) {
@@ -344,6 +338,7 @@
                 }
                 return true;
             } else if (res.status === 404) {
+                // Создаём начальные данные
                 appData = {
                     users: [{ id: "t1", login: "teacher", password: "123", role: "teacher", name: "Преподаватель" }],
                     cadets: []
@@ -355,21 +350,13 @@
         } catch (e) {
             if (!silent) setStatus('error', '⚠️ Ошибка');
             const local = localStorage.getItem('diary_backup');
-            if (local && !appData) {
-                appData = JSON.parse(local);
-            } else if (!appData) {
-                appData = {
-                    users: [{ id: "t1", login: "teacher", password: "123", role: "teacher", name: "Преподаватель" }],
-                    cadets: []
-                };
-            }
+            if (local && !appData) appData = JSON.parse(local);
+            else if (!appData) appData = { users: [{ id: "t1", login: "teacher", password: "123", role: "teacher", name: "Преподаватель" }], cadets: [] };
             return false;
-        } finally {
-            isLoading = false;
-        }
+        } finally { isLoading = false; }
     }
     
-    // Сохранение данных на GitHub
+    // Сохранение на GitHub
     async function saveToGitHub(silent = false) {
         if (!appData || isSaving) return false;
         isSaving = true;
@@ -377,43 +364,44 @@
         try {
             const content = btoa(unescape(encodeURIComponent(JSON.stringify(appData, null, 2))));
             let sha = null;
-            const getRes = await fetch(GITHUB_API, { headers: { 'Accept': 'application/vnd.github.v3+json' } });
+            const getRes = await fetch(GITHUB_API, { 
+                headers: { 'Accept': 'application/vnd.github.v3+json', 'Authorization': `token ${GITHUB_TOKEN}` } 
+            });
             if (getRes.ok) {
                 const info = await getRes.json();
                 sha = info.sha;
+            } else if (getRes.status !== 404) {
+                throw new Error('Ошибка получения SHA');
             }
-            const body = { 
-                message: `Обновление ${new Date().toLocaleString()}`, 
-                content: content, 
-                branch: 'main' 
-            };
+            const body = { message: `Обновление ${new Date().toLocaleString()}`, content: content, branch: 'main' };
             if (sha) body.sha = sha;
             const res = await fetch(GITHUB_API, {
                 method: 'PUT',
-                headers: { 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
+                headers: { 
+                    'Accept': 'application/vnd.github.v3+json', 
+                    'Content-Type': 'application/json',
+                    'Authorization': `token ${GITHUB_TOKEN}`
+                },
                 body: JSON.stringify(body)
             });
             if (res.ok) {
                 if (!silent) setStatus('synced', '✅ Сохранено');
                 return true;
+            } else {
+                const errText = await res.text();
+                console.error('Ошибка сохранения:', errText);
+                if (!silent) setStatus('error', '⚠️ Ошибка токена');
+                return false;
             }
-            throw new Error('Ошибка сохранения');
         } catch (e) {
+            console.error(e);
             if (!silent) setStatus('error', '⚠️ Локально');
             return false;
-        } finally {
-            isSaving = false;
-        }
+        } finally { isSaving = false; }
     }
     
-    // Сохранить и одновременно обновить данные (после действия пользователя)
-    async function saveAndSync() {
-        await saveToGitHub(false);
-        await loadFromGitHub(true);
-        renderTeacherTable();
-    }
+    async function saveAndSync() { await saveToGitHub(false); await loadFromGitHub(true); renderTeacherTable(); }
     
-    // Получение данных
     function getCadets() { return appData?.cadets || []; }
     function getCadetById(id) { return appData?.cadets.find(c => c.id === id); }
     function fullName(c) { return `${c.surname} ${c.name} ${c.patronymic}`.trim(); }
@@ -426,19 +414,11 @@
     
     function getAllNumericGrades(cadet) {
         let values = [];
-        SUBJECTS.forEach(subj => {
-            if (cadet.grades?.[subj]) {
-                cadet.grades[subj].forEach(m => values.push(getNumericValue(m)));
-            }
-        });
+        SUBJECTS.forEach(subj => { if (cadet.grades?.[subj]) { cadet.grades[subj].forEach(m => values.push(getNumericValue(m))); } });
         return values;
     }
     
-    function avgFromArray(arr) {
-        if (!arr.length) return "—";
-        let sum = arr.reduce((a,b)=>a+b,0);
-        return (sum / arr.length).toFixed(1);
-    }
+    function avgFromArray(arr) { if (!arr.length) return "—"; return (arr.reduce((a,b)=>a+b,0)/arr.length).toFixed(1); }
     
     async function addCadet(surname, name, patronymic) {
         let newId = "c"+Date.now();
@@ -448,10 +428,7 @@
         await saveAndSync();
     }
     
-    async function deleteCadet(id) {
-        appData.cadets = appData.cadets.filter(c => c.id !== id);
-        await saveAndSync();
-    }
+    async function deleteCadet(id) { appData.cadets = appData.cadets.filter(c => c.id !== id); await saveAndSync(); }
     
     async function addMark(cid, subj, markValue) {
         let c = getCadetById(cid);
@@ -473,144 +450,85 @@
     
     async function removeLastMark(cid, subj) {
         let c = getCadetById(cid);
-        if (c && c.grades[subj]?.length) {
-            c.grades[subj].pop();
-            await saveAndSync();
-        }
+        if (c && c.grades[subj]?.length) { c.grades[subj].pop(); await saveAndSync(); }
     }
     
-    function getMarkDisplay(mark) {
-        if (mark === 'н') return '❌ н';
-        if (mark === 'о') return '📋 о';
-        return mark;
-    }
-    
-    function getMarkClass(mark) {
-        if (mark === 'н') return 'absent';
-        if (mark === 'о') return 'task';
-        return 'normal';
-    }
+    function getMarkDisplay(mark) { if (mark === 'н') return '❌ н'; if (mark === 'о') return '📋 о'; return mark; }
+    function getMarkClass(mark) { if (mark === 'н') return 'absent'; if (mark === 'о') return 'task'; return 'normal'; }
     
     function renderTeacherTable() {
         const thead = document.getElementById("tableHeader");
         const tbody = document.getElementById("tableBody");
         if (!thead || !tbody) return;
         let cadets = getCadets();
-        
-        let headerHtml = `<td><th>👤 Курсант</th>`;
+        let headerHtml = `<tr><th>👤 Курсант</th>`;
         SUBJECTS.forEach(s => headerHtml += `<th>${s}</th>`);
-        headerHtml += `<th>📊 Средний</th><th></th></table>`;
+        headerHtml += `<th>📊 Средний</th><th></th></tr>`;
         thead.innerHTML = headerHtml;
-        
-        if (!cadets.length) {
-            tbody.innerHTML = `<tr><td colspan="${SUBJECTS.length+3}" class="empty-row">📭 Нет курсантов. Добавьте первого!</td></tr>`;
-            return;
-        }
-        
+        if (!cadets.length) { tbody.innerHTML = `<tr><td colspan="${SUBJECTS.length+3}" class="empty-row">📭 Нет курсантов. Добавьте первого!</td></tr>`; return; }
         tbody.innerHTML = '';
         for (let cadet of cadets) {
             let numericGrades = getAllNumericGrades(cadet);
             let totalAvg = avgFromArray(numericGrades);
-            
             let row = document.createElement('tr');
             let nameCell = document.createElement('td');
             nameCell.innerText = fullName(cadet);
             nameCell.style.fontWeight = 'bold';
             row.appendChild(nameCell);
-            
             for (let subj of SUBJECTS) {
                 let marks = cadet.grades[subj] || [];
                 let td = document.createElement('td');
-                
-                let marksDiv = document.createElement('div');
-                marksDiv.className = 'grades-list';
+                let marksDiv = document.createElement('div'); marksDiv.className = 'grades-list';
                 for (let i = 0; i < marks.length; i++) {
                     let badge = document.createElement('div');
                     badge.className = `grade-badge ${getMarkClass(marks[i])}`;
                     badge.innerText = getMarkDisplay(marks[i]);
                     badge.style.cursor = 'pointer';
-                    badge.onclick = async (e) => {
-                        e.stopPropagation();
-                        await deleteMarkByIndex(cadet.id, subj, i);
-                        renderTeacherTable();
-                    };
+                    badge.onclick = async (e) => { e.stopPropagation(); await deleteMarkByIndex(cadet.id, subj, i); renderTeacherTable(); };
                     marksDiv.appendChild(badge);
                 }
                 td.appendChild(marksDiv);
-                
-                let controlDiv = document.createElement('div');
-                controlDiv.className = 'grade-control';
-                let select = document.createElement('select');
-                select.className = 'grade-select';
+                let controlDiv = document.createElement('div'); controlDiv.className = 'grade-control';
+                let select = document.createElement('select'); select.className = 'grade-select';
                 ['2','3','4','5','н','о'].forEach(opt => {
                     let option = document.createElement('option');
                     option.value = opt;
                     option.innerText = opt === 'н' ? '❌ не пришёл' : (opt === 'о' ? '📋 отработка' : opt);
                     select.appendChild(option);
                 });
-                let addBtn = document.createElement('button');
-                addBtn.innerText = '+';
-                addBtn.className = 'action-btn add';
-                addBtn.onclick = async () => {
-                    await addMark(cadet.id, subj, select.value);
-                    renderTeacherTable();
-                };
-                let delLastBtn = document.createElement('button');
-                delLastBtn.innerText = '🗑️';
-                delLastBtn.className = 'action-btn del-last';
-                delLastBtn.onclick = async () => {
-                    if (marks.length) {
-                        await removeLastMark(cadet.id, subj);
-                        renderTeacherTable();
-                    }
-                };
-                controlDiv.appendChild(select);
-                controlDiv.appendChild(addBtn);
-                controlDiv.appendChild(delLastBtn);
+                let addBtn = document.createElement('button'); addBtn.innerText = '+'; addBtn.className = 'action-btn add';
+                addBtn.onclick = async () => { await addMark(cadet.id, subj, select.value); renderTeacherTable(); };
+                let delLastBtn = document.createElement('button'); delLastBtn.innerText = '🗑️'; delLastBtn.className = 'action-btn del-last';
+                delLastBtn.onclick = async () => { if (marks.length) { await removeLastMark(cadet.id, subj); renderTeacherTable(); } };
+                controlDiv.appendChild(select); controlDiv.appendChild(addBtn); controlDiv.appendChild(delLastBtn);
                 td.appendChild(controlDiv);
                 row.appendChild(td);
             }
-            
-            let avgCell = document.createElement('td');
-            avgCell.className = 'avg-cell';
-            avgCell.innerText = totalAvg;
+            let avgCell = document.createElement('td'); avgCell.className = 'avg-cell'; avgCell.innerText = totalAvg;
             let actionCell = document.createElement('td');
-            let delCadetBtn = document.createElement('button');
-            delCadetBtn.innerText = '🗑️';
-            delCadetBtn.className = 'delete-cadet-btn';
-            delCadetBtn.onclick = async () => {
-                await deleteCadet(cadet.id);
-                renderTeacherTable();
-            };
+            let delCadetBtn = document.createElement('button'); delCadetBtn.innerText = '🗑️'; delCadetBtn.className = 'delete-cadet-btn';
+            delCadetBtn.onclick = async () => { await deleteCadet(cadet.id); renderTeacherTable(); };
             actionCell.appendChild(delCadetBtn);
-            row.appendChild(avgCell);
-            row.appendChild(actionCell);
+            row.appendChild(avgCell); row.appendChild(actionCell);
             tbody.appendChild(row);
         }
     }
     
-    // Фоновая синхронизация каждые 5 секунд
     function startBackgroundSync() {
         if (syncTimer) clearInterval(syncTimer);
         syncTimer = setInterval(async () => {
             if (currentUser && !isSaving && !isLoading) {
                 const oldDataStr = JSON.stringify(appData);
                 await loadFromGitHub(true);
-                if (oldDataStr !== JSON.stringify(appData)) {
-                    renderTeacherTable();
-                    setStatus('synced', '🔄 Данные обновлены');
-                }
+                if (oldDataStr !== JSON.stringify(appData)) { renderTeacherTable(); setStatus('synced', '🔄 Данные обновлены'); }
             }
-        }, 5000); // 5 секунд
+        }, 5000);
     }
     
     async function login(loginVal, pwd) {
         if (!appData) await loadFromGitHub(true);
         let user = appData.users.find(u => u.login === loginVal && u.password === pwd && u.role === 'teacher');
-        if (!user) {
-            document.getElementById('loginError').innerText = 'Неверный логин или пароль';
-            return false;
-        }
+        if (!user) { document.getElementById('loginError').innerText = 'Неверный логин или пароль'; return false; }
         currentUser = user;
         document.getElementById('loginForm').style.display = 'none';
         document.getElementById('teacherPanel').style.display = 'block';

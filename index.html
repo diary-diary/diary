@@ -207,6 +207,7 @@
         .status.syncing { background: #f59e0b; }
         .status.synced { background: #22c55e; }
         .status.error { background: #ef4444; }
+        .status.saving { background: #3b82f6; }
         .legend {
             display: flex;
             gap: 24px;
@@ -236,7 +237,7 @@
             <div id="loginError" class="error"></div>
             <div style="margin-top: 30px; font-size: 0.7rem; color: #94a3b8;">
                 🔐 Преподаватель: <strong>teacher</strong> / <strong>123</strong><br>
-                🌐 Синхронизация через GitHub (обновление 5 сек)
+                💾 Автосохранение и синхронизация каждые 5 секунд
             </div>
         </div>
     </div>
@@ -264,7 +265,7 @@
                         <tr><th>👤 ФИО курсанта</th><th>Военно Тактическая Подготовка</th><th>Русский язык</th><th>Юридический</th><th>📊 Средний</th><th>⚙️</th></tr>
                     </thead>
                     <tbody id="tableBody">
-                        <td><td colspan="6" class="empty-row">📭 Загрузка...<\/td><\/tr>
+                        <tr><td colspan="6" class="empty-row">📭 Загрузка...<\/td><\/tr>
                     </tbody>
                 </table>
             </div>
@@ -274,7 +275,7 @@
                 <span><span style="background:#fecaca; padding:2px 8px; border-radius:20px;">❌</span> Не пришёл</span>
                 <span><span style="background:#fde68a; padding:2px 8px; border-radius:20px;">📋</span> Отработка</span>
                 <span>🔴 Клик по оценке — удаление</span>
-                <span>🔄 Автосинхронизация 5 сек</span>
+                <span>🔄 Автосохранение + синхронизация (5 сек)</span>
             </div>
         </div>
     </div>
@@ -296,7 +297,10 @@
     let appData = null;
     let currentUser = null;
     let syncTimer = null;
+    let saveTimer = null;
     let isSyncing = false;
+    let isSaving = false;
+    let pendingSave = false;
     
     function setStatus(type, text) {
         const el = document.getElementById('status');
@@ -316,15 +320,18 @@
         if (isSyncing) return false;
         isSyncing = true;
         try {
-            setStatus('syncing', '🔄 Загрузка...');
             const res = await fetch(RAW_URL + '?t=' + Date.now());
             if (res.ok) {
-                appData = await res.json();
-                localStorage.setItem('diary_backup', JSON.stringify(appData));
-                setStatus('synced', '✅ Загружено');
+                const newData = await res.json();
+                // Если данные изменились на сервере
+                if (JSON.stringify(appData) !== JSON.stringify(newData)) {
+                    appData = newData;
+                    localStorage.setItem('diary_backup', JSON.stringify(appData));
+                    setStatus('synced', '🔄 Синхронизировано');
+                    if (currentUser) renderTeacherTable();
+                }
                 return true;
             } else if (res.status === 404) {
-                // Создаём начальные данные
                 appData = {
                     users: [{ id: "t1", login: "teacher", password: "123", role: "teacher", name: "Преподаватель" }],
                     cadets: []
@@ -334,7 +341,7 @@
             }
             throw new Error('Ошибка');
         } catch(e) {
-            setStatus('error', '⚠️ Ошибка');
+            setStatus('error', '⚠️ Ошибка загрузки');
             const local = localStorage.getItem('diary_backup');
             if (local) appData = JSON.parse(local);
             else appData = { users: [{ id: "t1", login: "teacher", password: "123", role: "teacher" }], cadets: [] };
@@ -346,7 +353,12 @@
     
     // Сохранение на GitHub
     async function saveToGitHub() {
-        if (!appData) return false;
+        if (!appData || isSaving) {
+            if (!isSaving) pendingSave = true;
+            return false;
+        }
+        isSaving = true;
+        pendingSave = false;
         localStorage.setItem('diary_backup', JSON.stringify(appData));
         try {
             const content = btoa(unescape(encodeURIComponent(JSON.stringify(appData, null, 2))));
@@ -366,36 +378,61 @@
                     'Accept': 'application/vnd.github.v3+json'
                 },
                 body: JSON.stringify({
-                    message: `Обновление ${new Date().toLocaleString()}`,
+                    message: `Автосохранение ${new Date().toLocaleString()}`,
                     content: content,
                     sha: sha,
                     branch: 'main'
                 })
             });
             if (res.ok) {
-                setStatus('synced', '✅ Сохранено');
+                setStatus('synced', '💾 Сохранено');
                 return true;
             }
             return false;
         } catch(e) {
-            setStatus('error', '⚠️ Ошибка');
+            setStatus('error', '⚠️ Ошибка сохранения');
             return false;
+        } finally {
+            isSaving = false;
+            if (pendingSave) saveToGitHub();
         }
     }
     
-    async function syncAndRender() {
+    // Загрузка и синхронизация
+    async function syncFromCloud() {
         if (currentUser && !isSyncing) {
-            const oldData = JSON.stringify(appData);
             await loadFromGitHub();
-            if (oldData !== JSON.stringify(appData)) {
-                renderTeacherTable();
-            }
         }
+    }
+    
+    // Принудительное сохранение
+    async function forceSave() {
+        if (currentUser && appData && !isSaving) {
+            await saveToGitHub();
+        }
+    }
+    
+    // Обработчик изменения данных (вызывается после каждого действия)
+    let saveTimeout = null;
+    function onDataChanged() {
+        if (saveTimeout) clearTimeout(saveTimeout);
+        saveTimeout = setTimeout(() => {
+            forceSave();
+        }, 1000);
     }
     
     function startAutoSync() {
+        // Синхронизация (загрузка новых данных) каждые 5 секунд
         if (syncTimer) clearInterval(syncTimer);
-        syncTimer = setInterval(syncAndRender, 5000);
+        syncTimer = setInterval(syncFromCloud, 5000);
+        
+        // Автосохранение каждые 5 секунд (на всякий случай)
+        if (saveTimer) clearInterval(saveTimer);
+        saveTimer = setInterval(() => {
+            if (currentUser && appData && !isSaving) {
+                saveToGitHub();
+            }
+        }, 5000);
     }
     
     function getCadets() { return appData?.cadets || []; }
@@ -429,14 +466,16 @@
         let gradesInit = {};
         SUBJECTS.forEach(s => gradesInit[s] = []);
         appData.cadets.push({ id: newId, surname, name, patronymic, grades: gradesInit });
-        await saveToGitHub();
+        await forceSave();
         renderTeacherTable();
+        onDataChanged();
     }
     
     async function deleteCadet(id) {
         appData.cadets = appData.cadets.filter(c => c.id !== id);
-        await saveToGitHub();
+        await forceSave();
         renderTeacherTable();
+        onDataChanged();
     }
     
     async function addMark(cid, subj, markValue) {
@@ -446,16 +485,18 @@
         if (!allowed.includes(markValue)) return;
         if (!c.grades[subj]) c.grades[subj] = [];
         c.grades[subj].push(markValue);
-        await saveToGitHub();
+        await forceSave();
         renderTeacherTable();
+        onDataChanged();
     }
     
     async function deleteMarkByIndex(cid, subj, index) {
         let c = getCadetById(cid);
         if (c && c.grades[subj] && c.grades[subj][index] !== undefined) {
             c.grades[subj].splice(index, 1);
-            await saveToGitHub();
+            await forceSave();
             renderTeacherTable();
+            onDataChanged();
         }
     }
     
@@ -463,8 +504,9 @@
         let c = getCadetById(cid);
         if (c && c.grades[subj]?.length) {
             c.grades[subj].pop();
-            await saveToGitHub();
+            await forceSave();
             renderTeacherTable();
+            onDataChanged();
         }
     }
     
@@ -583,6 +625,7 @@
     function logout() {
         currentUser = null;
         if (syncTimer) clearInterval(syncTimer);
+        if (saveTimer) clearInterval(saveTimer);
         document.getElementById('loginForm').style.display = 'block';
         document.getElementById('teacherPanel').style.display = 'none';
         document.getElementById('loginError').innerText = '';

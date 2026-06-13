@@ -67,7 +67,7 @@
             <div id="loginError" class="error"></div>
             <div style="margin-top: 30px; font-size: 0.7rem; color: #94a3b8;">
                 🔐 Преподаватель: <strong>teacher</strong> / <strong>123</strong><br>
-                ☁️ Синхронизация через GitHub (сначала сохранение, потом загрузка)
+                ☁️ Синхронизация через GitHub
             </div>
         </div>
     </div>
@@ -142,7 +142,7 @@
         }, 2000);
     }
 
-    // Загрузка из GitHub (полная замена локальных данных)
+    // Загрузка из GitHub
     async function loadFromGitHub() {
         if (isLoading) return false;
         isLoading = true;
@@ -153,12 +153,12 @@
                 if (remote && remote.cadets !== undefined) {
                     appData = remote;
                     localStorage.setItem('diary_backup', JSON.stringify(appData));
-                    setStatus('synced', '✅ Загружено');
                     if (currentUser) renderTeacherTable();
+                    setStatus('synced', '✅ Загружено');
                     return true;
                 }
             } else if (res.status === 404) {
-                // Файл не существует → создаём начальные данные
+                // Файл не существует → создаём начальные данные и сохраняем
                 appData = {
                     users: [{ id: "t1", login: "teacher", password: "123", role: "teacher", name: "Преподаватель" }],
                     cadets: []
@@ -166,8 +166,9 @@
                 await saveToGitHub();
                 return true;
             }
-            throw new Error('Ошибка');
+            throw new Error('Ошибка загрузки');
         } catch(e) {
+            console.error('loadFromGitHub error:', e);
             setStatus('error', '⚠️ Ошибка загрузки');
             const local = localStorage.getItem('diary_backup');
             if (local) appData = JSON.parse(local);
@@ -178,7 +179,7 @@
         }
     }
 
-    // Сохранение в GitHub (полная замена удалённых данных)
+    // Сохранение в GitHub
     async function saveToGitHub() {
         if (!appData || isSaving) return false;
         isSaving = true;
@@ -209,10 +210,14 @@
             });
             if (res.ok) {
                 setStatus('synced', '💾 Сохранено в GitHub');
+                console.log('Saved to GitHub successfully');
                 return true;
+            } else {
+                console.error('Save failed, status:', res.status);
+                return false;
             }
-            return false;
         } catch(e) {
+            console.error('saveToGitHub error:', e);
             setStatus('error', '⚠️ Ошибка сохранения');
             return false;
         } finally {
@@ -220,20 +225,15 @@
         }
     }
 
-    // Основная функция: СОХРАНЯЕМ И ПОТОМ ЗАГРУЖАЕМ
-    async function saveAndReload() {
-        await saveToGitHub();
-        await loadFromGitHub();
-    }
-
-    // Функция для любых изменений: вызываем saveAndReload и обновляем таблицу
+    // Функция для изменений: сначала меняем локально, потом сохраняем, потом обновляем таблицу
     async function applyChangeAndSync(changeCallback) {
-        changeCallback();          // 1. изменяем локальные данные
-        await saveAndReload();     // 2. сохраняем в GitHub и загружаем обратно
-        renderTeacherTable();      // 3. обновляем экран (loadFromGitHub уже это сделает, но на всякий случай)
+        changeCallback();          // меняем локальные данные
+        await saveToGitHub();      // сохраняем в GitHub
+        renderTeacherTable();      // обновляем экран (loadFromGitHub не нужна, т.к. мы сами изменили)
+        // Небольшая задержка для синхронизации с другими устройствами (фоновая загрузка сама всё подтянет)
     }
 
-    // Фоновая синхронизация: просто загружаем новые данные (без сохранения)
+    // Фоновая синхронизация
     async function backgroundSync() {
         if (currentUser && !isSaving && !isLoading) {
             const oldDataStr = JSON.stringify(appData);
@@ -339,7 +339,7 @@
 
         let headerHtml = `<tr><th>👤 ФИО курсанта</th>`;
         SUBJECTS.forEach(s => headerHtml += `<th>${s}</th>`);
-        headerHtml += `<th>📊 Средний балл</th><th>⚙️</th>45`;
+        headerHtml += `<th>📊 Средний балл</th><th>⚙️</th></td>`;
         thead.innerHTML = headerHtml;
 
         if (!cadets.length) {

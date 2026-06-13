@@ -207,6 +207,7 @@
         .status.syncing { background: #f59e0b; }
         .status.synced { background: #22c55e; }
         .status.error { background: #ef4444; }
+        .status.saving { background: #3b82f6; }
         .legend {
             display: flex;
             gap: 24px;
@@ -236,7 +237,7 @@
             <div id="loginError" class="error"></div>
             <div style="margin-top: 30px; font-size: 0.7rem; color: #94a3b8;">
                 🔐 Преподаватель: <strong>teacher</strong> / <strong>123</strong><br>
-                ☁️ Онлайн синхронизация через GitHub
+                ☁️ Онлайн синхронизация (5 сек)
             </div>
         </div>
     </div>
@@ -274,7 +275,7 @@
                 <span><span style="background:#fecaca; padding:2px 8px; border-radius:20px;">❌</span> Не пришёл</span>
                 <span><span style="background:#fde68a; padding:2px 8px; border-radius:20px;">📋</span> Отработка</span>
                 <span>🔴 Клик по оценке — удаление</span>
-                <span>🔄 Синхронизация 5 сек</span>
+                <span>🔄 Синхронизация 5 сек (сохраняет изменения)</span>
             </div>
         </div>
     </div>
@@ -282,13 +283,14 @@
 
 <script>
     // ============================================
-    // ОНЛАЙН РЕЖИМ ЧЕРЕЗ GITHUB TOKEN
-    // ВСТАВЬТЕ ВАШ ТОКЕН В 3 МЕСТАХ НИЖЕ!
+    // ОНЛАЙН СИНХРОНИЗАЦИЯ ЧЕРЕЗ GITHUB
+    // ДАННЫЕ НЕ ТЕРЯЮТСЯ ПРИ ОБНОВЛЕНИИ
     // ============================================
     
-    const GITHUB_USERNAME = "diary";     // ← ВАШ ЛОГИН НА GITHUB
-    const GITHUB_REPO = "diary-diary";              // ← НАЗВАНИЕ РЕПОЗИТОРИЯ
-    const GITHUB_TOKEN = "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";         // ← СЮДА ВСТАВЬТЕ ghp_...
+    // 🔑 ВСТАВЬТЕ ВАШИ ДАННЫЕ:
+    const GITHUB_USERNAME = "diary-diary";        // Ваш логин на GitHub
+    const GITHUB_REPO = "diary";                // Название репозитория
+    const GITHUB_TOKEN = "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";           // Ваш токен (ghp_...)
     // ============================================
     
     const API_URL = `https://api.github.com/repos/${GITHUB_USERNAME}/${GITHUB_REPO}/contents/data.json`;
@@ -300,6 +302,7 @@
     let syncTimer = null;
     let isSyncing = false;
     let isSaving = false;
+    let lastSyncTimestamp = 0;
     
     function setStatus(type, text) {
         const el = document.getElementById('status');
@@ -314,22 +317,74 @@
         }, 2000);
     }
     
-    // Загрузка с GitHub
+    // Слияние данных (сохраняем последние изменения)
+    function mergeData(localData, remoteData) {
+        if (!localData) return remoteData;
+        if (!remoteData) return localData;
+        
+        // Берем последнюю версию каждого курсанта по timestamp
+        const mergedCadets = [];
+        const cadetMap = new Map();
+        
+        // Добавляем всех курсантов из локальных данных
+        if (localData.cadets) {
+            localData.cadets.forEach(c => cadetMap.set(c.id, { ...c, _source: 'local', _time: c._timestamp || 0 }));
+        }
+        
+        // Обновляем или добавляем из удаленных данных
+        if (remoteData.cadets) {
+            remoteData.cadets.forEach(rc => {
+                const existing = cadetMap.get(rc.id);
+                const remoteTime = rc._timestamp || 0;
+                const localTime = existing?._time || 0;
+                if (!existing || remoteTime > localTime) {
+                    cadetMap.set(rc.id, { ...rc, _source: 'remote', _time: remoteTime });
+                }
+            });
+        }
+        
+        // Преобразуем обратно в массив
+        cadetMap.forEach(cadet => {
+            // Удаляем служебные поля
+            delete cadet._source;
+            delete cadet._time;
+            mergedCadets.push(cadet);
+        });
+        
+        return {
+            users: remoteData.users || localData.users,
+            cadets: mergedCadets
+        };
+    }
+    
+    // Загрузка с GitHub (с умным слиянием)
     async function loadFromGitHub() {
         if (isSyncing) return false;
         isSyncing = true;
         try {
             const res = await fetch(RAW_URL + '?t=' + Date.now());
             if (res.ok) {
-                const newData = await res.json();
-                if (JSON.stringify(appData) !== JSON.stringify(newData)) {
-                    appData = newData;
-                    localStorage.setItem('diary_backup', JSON.stringify(appData));
-                    setStatus('synced', '🔄 Синхронизировано');
-                    if (currentUser) renderTeacherTable();
+                const remoteData = await res.json();
+                const localBackup = localStorage.getItem('diary_backup');
+                const localData = localBackup ? JSON.parse(localBackup) : appData;
+                
+                // Объединяем данные
+                const mergedData = mergeData(localData, remoteData);
+                
+                // Добавляем timestamp к каждому курсанту для отслеживания изменений
+                if (mergedData.cadets) {
+                    mergedData.cadets.forEach(c => {
+                        if (!c._timestamp) c._timestamp = Date.now();
+                    });
                 }
+                
+                appData = mergedData;
+                localStorage.setItem('diary_backup', JSON.stringify(appData));
+                setStatus('synced', '🔄 Синхронизировано');
+                if (currentUser) renderTeacherTable();
                 return true;
             } else if (res.status === 404) {
+                // Файла нет, создаём
                 appData = {
                     users: [{ id: "t1", login: "teacher", password: "123", role: "teacher", name: "Преподаватель" }],
                     cadets: []
@@ -349,10 +404,18 @@
         }
     }
     
-    // Сохранение на GitHub
+    // Сохранение на GitHub (с timestamp)
     async function saveToGitHub() {
         if (!appData || isSaving) return false;
         isSaving = true;
+        
+        // Обновляем timestamp у всех курсантов
+        if (appData.cadets) {
+            appData.cadets.forEach(c => {
+                c._timestamp = Date.now();
+            });
+        }
+        
         localStorage.setItem('diary_backup', JSON.stringify(appData));
         try {
             const content = btoa(unescape(encodeURIComponent(JSON.stringify(appData, null, 2))));
@@ -391,11 +454,15 @@
         }
     }
     
-    async function syncAndRender() {
+    // Синхронизация с умным слиянием
+    async function syncAndMerge() {
         if (currentUser && !isSyncing && !isSaving) {
-            const oldData = JSON.stringify(appData);
+            const localBackup = localStorage.getItem('diary_backup');
+            const oldData = localBackup ? JSON.parse(localBackup) : appData;
             await loadFromGitHub();
-            if (oldData !== JSON.stringify(appData)) {
+            
+            // Проверяем, изменились ли данные
+            if (JSON.stringify(oldData) !== JSON.stringify(appData)) {
                 renderTeacherTable();
             }
         }
@@ -403,7 +470,7 @@
     
     function startAutoSync() {
         if (syncTimer) clearInterval(syncTimer);
-        syncTimer = setInterval(syncAndRender, 5000);
+        syncTimer = setInterval(syncAndMerge, 5000);
     }
     
     function getCadets() { return appData?.cadets || []; }
@@ -436,7 +503,14 @@
         let newId = "c" + Date.now();
         let gradesInit = {};
         SUBJECTS.forEach(s => gradesInit[s] = []);
-        appData.cadets.push({ id: newId, surname, name, patronymic, grades: gradesInit });
+        appData.cadets.push({ 
+            id: newId, 
+            surname, 
+            name, 
+            patronymic, 
+            grades: gradesInit,
+            _timestamp: Date.now()
+        });
         await saveToGitHub();
         renderTeacherTable();
     }
@@ -454,6 +528,7 @@
         if (!allowed.includes(markValue)) return;
         if (!c.grades[subj]) c.grades[subj] = [];
         c.grades[subj].push(markValue);
+        c._timestamp = Date.now();
         await saveToGitHub();
         renderTeacherTable();
     }
@@ -462,6 +537,7 @@
         let c = getCadetById(cid);
         if (c && c.grades[subj] && c.grades[subj][index] !== undefined) {
             c.grades[subj].splice(index, 1);
+            c._timestamp = Date.now();
             await saveToGitHub();
             renderTeacherTable();
         }
@@ -471,6 +547,7 @@
         let c = getCadetById(cid);
         if (c && c.grades[subj]?.length) {
             c.grades[subj].pop();
+            c._timestamp = Date.now();
             await saveToGitHub();
             renderTeacherTable();
         }
@@ -496,7 +573,7 @@
         
         let headerHtml = `<tr><th>👤 ФИО курсанта</th>`;
         SUBJECTS.forEach(s => headerHtml += `<th>${s}</th>`);
-        headerHtml += `<th>📊 Средний балл</th><th>⚙️</th><tr>`;
+        headerHtml += `<th>📊 Средний балл</th><th>⚙️</th></tr>`;
         thead.innerHTML = headerHtml;
         
         if (!cadets.length) {

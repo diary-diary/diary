@@ -3,72 +3,205 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Академия Прокуратуры - Электронный дневник</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;400;500;600;700&display=swap" rel="stylesheet">
+    <title>Электронный дневник — Firebase</title>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Inter', sans-serif; background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%); min-height: 100vh; padding: 20px; }
+        body {
+            font-family: 'Segoe UI', system-ui;
+            background: linear-gradient(135deg, #0f172a, #1e293b);
+            min-height: 100vh;
+            padding: 20px;
+        }
         .container { max-width: 1400px; margin: 0 auto; }
-        .login-card { background: rgba(255,255,255,0.98); border-radius: 40px; padding: 50px 45px; max-width: 480px; margin: 100px auto; text-align: center; box-shadow: 0 25px 45px rgba(0,0,0,0.2); }
-        .login-card .logo { font-size: 3rem; margin-bottom: 10px; }
-        .login-card h1 { background: linear-gradient(135deg, #1e3a5f, #2c5282); -webkit-background-clip: text; background-clip: text; color: transparent; }
-        .login-card input { width: 100%; padding: 15px 18px; margin: 10px 0; border: 2px solid #e2e8f0; border-radius: 28px; font-size: 1rem; }
-        .login-card button { width: 100%; padding: 15px; background: linear-gradient(135deg, #1e3a5f, #2c5282); color: white; border: none; border-radius: 32px; font-size: 1rem; font-weight: 600; cursor: pointer; margin-top: 20px; }
-        .main-panel { background: rgba(255,255,255,0.96); border-radius: 40px; padding: 32px 36px; box-shadow: 0 25px 45px rgba(0,0,0,0.15); }
-        .panel-header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px; margin-bottom: 28px; padding-bottom: 20px; border-bottom: 2px solid rgba(0,0,0,0.06); }
-        .panel-header h1 { background: linear-gradient(135deg, #1e3a5f, #2c5282); -webkit-background-clip: text; background-clip: text; color: transparent; font-size: 1.8rem; }
-        .logout-btn { background: #ef4444; color: white; border: none; padding: 10px 28px; border-radius: 40px; font-weight: 600; cursor: pointer; }
-        .add-cadet-form { background: linear-gradient(135deg, #f8fafc, #f1f5f9); border-radius: 28px; padding: 28px 30px; margin-bottom: 35px; }
-        .form-row { display: flex; flex-wrap: wrap; gap: 15px; align-items: flex-end; }
-        .form-group { flex: 1; min-width: 160px; }
-        .form-group label { display: block; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; color: #64748b; margin-bottom: 6px; }
-        .form-group input { width: 100%; padding: 12px 16px; background: white; border: 1.5px solid #e2e8f0; border-radius: 20px; font-size: 0.9rem; }
-        .add-cadet-form button { background: linear-gradient(135deg, #10b981, #059669); color: white; border: none; padding: 12px 32px; border-radius: 24px; font-weight: 600; cursor: pointer; height: 46px; }
-        .table-wrapper { overflow-x: auto; border-radius: 24px; border: 1px solid #eef2f8; }
-        .grades-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; background: white; border-radius: 24px; overflow: hidden; }
-        .grades-table th { background: linear-gradient(135deg, #1e3a5f, #2c5282); color: white; padding: 16px 12px; text-align: center; }
-        .grades-table th:first-child { text-align: left; padding-left: 20px; }
-        .grades-table td { padding: 14px 8px; border-bottom: 1px solid #f0f4fa; text-align: center; vertical-align: middle; }
-        .grades-table td:first-child { text-align: left; padding-left: 20px; font-weight: 600; background: #fafdff; }
-        .grades-list { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; margin-bottom: 10px; }
-        .grade-badge { display: inline-flex; align-items: center; justify-content: center; min-width: 42px; height: 36px; border-radius: 20px; font-weight: 700; font-size: 0.85rem; cursor: pointer; transition: all 0.2s; padding: 0 10px; }
-        .grade-badge.normal { background: linear-gradient(145deg, #e0e7ff, #d1d9ff); color: #1e3a5f; }
-        .grade-badge.absent { background: linear-gradient(145deg, #fee2e2, #fecaca); color: #b91c1c; }
-        .grade-badge.task { background: linear-gradient(145deg, #fef3c7, #fde68a); color: #92400e; }
-        .grade-badge:hover { transform: scale(1.08); }
-        .grade-control { display: flex; gap: 8px; justify-content: center; align-items: center; flex-wrap: wrap; margin-top: 8px; }
-        .grade-select { padding: 8px 12px; border: 1.5px solid #e2e8f0; border-radius: 24px; font-size: 0.8rem; background: white; cursor: pointer; }
-        .action-btn { background: #eef3fc; border: none; width: 34px; height: 34px; border-radius: 25px; cursor: pointer; font-size: 1rem; transition: all 0.2s; }
+        .login-card {
+            background: white;
+            border-radius: 40px;
+            padding: 50px;
+            max-width: 450px;
+            margin: 100px auto;
+            text-align: center;
+            box-shadow: 0 25px 45px rgba(0,0,0,0.2);
+        }
+        .login-card input {
+            width: 100%;
+            padding: 14px;
+            margin: 8px 0;
+            border: 2px solid #e2e8f0;
+            border-radius: 28px;
+        }
+        .login-card button {
+            width: 100%;
+            padding: 14px;
+            background: #1e3a5f;
+            color: white;
+            border: none;
+            border-radius: 28px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .main-panel {
+            background: white;
+            border-radius: 40px;
+            padding: 30px;
+            box-shadow: 0 25px 45px rgba(0,0,0,0.2);
+        }
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #eef2f8;
+        }
+        .logout-btn {
+            background: #ef4444;
+            color: white;
+            border: none;
+            padding: 10px 24px;
+            border-radius: 40px;
+            cursor: pointer;
+        }
+        .add-cadet-form {
+            background: #f8fafc;
+            border-radius: 28px;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+        .form-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            align-items: flex-end;
+        }
+        .form-group { flex: 1; min-width: 150px; }
+        .form-group label {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            color: #64748b;
+            display: block;
+            margin-bottom: 5px;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #e2e8f0;
+            border-radius: 16px;
+        }
+        .add-cadet-form button {
+            background: #10b981;
+            color: white;
+            border: none;
+            padding: 10px 24px;
+            border-radius: 20px;
+            cursor: pointer;
+        }
+        .table-wrapper { overflow-x: auto; }
+        .grades-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 24px;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        .grades-table th {
+            background: #1e3a5f;
+            color: white;
+            padding: 12px;
+            text-align: center;
+        }
+        .grades-table td {
+            padding: 12px 8px;
+            border-bottom: 1px solid #eef2f8;
+            text-align: center;
+            vertical-align: middle;
+        }
+        .grades-table td:first-child {
+            font-weight: bold;
+            text-align: left;
+        }
+        .grade-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            margin: 2px;
+            cursor: pointer;
+            background: #e0e7ff;
+            transition: 0.1s;
+        }
+        .grade-badge.absent { background: #fee2e2; color: #b91c1c; }
+        .grade-badge.task { background: #fef3c7; color: #92400e; }
+        .grade-badge:hover { transform: scale(1.05); }
+        .grade-control {
+            display: flex;
+            gap: 6px;
+            justify-content: center;
+            margin-top: 8px;
+        }
+        .grade-select {
+            padding: 6px 10px;
+            border-radius: 20px;
+            border: 1px solid #cbd5e1;
+        }
+        .action-btn {
+            width: 32px;
+            height: 32px;
+            border-radius: 20px;
+            border: none;
+            cursor: pointer;
+        }
         .action-btn.add { background: #2c5282; color: white; }
         .action-btn.del-last { background: #fee2e2; color: #b91c1c; }
-        .delete-cadet-btn { background: #fee2e2; border: none; width: 36px; height: 36px; border-radius: 25px; cursor: pointer; font-size: 1rem; }
-        .avg-cell { background: #ecfdf5; font-weight: 800; color: #065f46; font-size: 1rem; }
-        .empty-row { text-align: center; padding: 50px; color: #94a3b8; }
-        .status { position: fixed; bottom: 20px; right: 20px; background: #1e293b; color: white; padding: 8px 20px; border-radius: 40px; font-size: 0.7rem; z-index: 1000; }
-        .status.syncing { background: #f59e0b; }
-        .status.synced { background: #22c55e; }
-        .status.error { background: #ef4444; }
-        .legend { display: flex; gap: 24px; justify-content: center; margin-top: 24px; padding: 12px 20px; background: rgba(0,0,0,0.03); border-radius: 50px; flex-wrap: wrap; font-size: 0.7rem; }
-        .error { color: #dc2626; font-size: 0.8rem; margin-top: 10px; }
+        .delete-cadet-btn {
+            background: #fee2e2;
+            border: none;
+            width: 32px;
+            height: 32px;
+            border-radius: 20px;
+            cursor: pointer;
+        }
+        .avg-cell { background: #ecfdf5; font-weight: bold; color: #065f46; }
+        .status {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #1e293b;
+            color: white;
+            padding: 6px 16px;
+            border-radius: 40px;
+            font-size: 0.7rem;
+            z-index: 100;
+        }
+        .legend {
+            display: flex;
+            gap: 24px;
+            justify-content: center;
+            margin-top: 24px;
+            font-size: 0.7rem;
+            flex-wrap: wrap;
+        }
+        .error { color: #dc2626; margin-top: 10px; }
     </style>
 </head>
 <body>
 <div class="container">
-    <div id="status" class="status">✨ Подключение...</div>
+    <div id="status" class="status">✨ Загрузка...</div>
 
     <div id="loginForm">
         <div class="login-card">
-            <div class="logo">⚖️</div>
+            <div style="font-size: 3rem;">⚖️</div>
             <h1>Академия Прокуратуры</h1>
-            <div style="color:#64748b; margin-bottom:30px;">электронный журнал</div>
+            <div style="color:#64748b; margin-bottom:20px;">электронный журнал</div>
             <input type="text" id="loginInput" placeholder="Логин">
             <input type="password" id="passwordInput" placeholder="Пароль">
-            <button id="loginBtn">Войти →</button>
+            <button id="loginBtn">Войти</button>
             <div id="loginError" class="error"></div>
-            <div style="margin-top: 30px; font-size: 0.7rem; color: #94a3b8;">
-                🔐 Преподаватель: <strong>teacher</strong> / <strong>123</strong><br>
-                ☁️ Синхронизация: сначала в GitHub, потом из GitHub
-            </div>
+            <div style="margin-top:20px; font-size:0.7rem;">Преподаватель: <strong>teacher</strong> / <strong>123</strong></div>
+            <div style="font-size:0.7rem; color:#64748b;">☁️ Облачная синхронизация Firebase</div>
         </div>
     </div>
 
@@ -76,295 +209,190 @@
         <div class="main-panel">
             <div class="panel-header">
                 <h1>📖 Журнал успеваемости</h1>
-                <button id="logoutTeacher" class="logout-btn">🚪 Выйти</button>
+                <button id="logoutBtn" class="logout-btn">Выйти</button>
             </div>
-
             <div class="add-cadet-form">
                 <h3>➕ Добавить курсанта</h3>
                 <div class="form-row">
-                    <div class="form-group"><label>Фамилия</label><input type="text" id="newSurname" placeholder="Иванов"></div>
-                    <div class="form-group"><label>Имя</label><input type="text" id="newName" placeholder="Иван"></div>
-                    <div class="form-group"><label>Отчество</label><input type="text" id="newPatronymic" placeholder="Иванович"></div>
+                    <div class="form-group"><label>Фамилия</label><input type="text" id="newSurname"></div>
+                    <div class="form-group"><label>Имя</label><input type="text" id="newName"></div>
+                    <div class="form-group"><label>Отчество</label><input type="text" id="newPatronymic"></div>
                     <button id="addCadetBtn">➕ Добавить</button>
                 </div>
             </div>
-
             <div class="table-wrapper">
                 <table class="grades-table" id="gradesTable">
                     <thead id="tableHeader">
-                        <tr><th>👤 ФИО курсанта</th><th>Военно Тактическая Подготовка</th><th>Русский язык</th><th>Юридический</th><th>📊 Средний</th><th>⚙️</th></tr>
+                        <tr><th>👤 ФИО</th><th>Военно Тактическая</th><th>Русский язык</th><th>Юридический</th><th>Средний</th><th></th></tr>
                     </thead>
                     <tbody id="tableBody">
-                        <tr><td colspan="6" class="empty-row">📭 Загрузка...<\/td><\/tr>
+                        <tr><td colspan="6" class="empty-row">Загрузка...</td></tr>
                     </tbody>
                 </table>
             </div>
-
             <div class="legend">
-                <span><span style="background:#d1d9ff; padding:2px 8px; border-radius:20px;">2-5</span> Оценка</span>
-                <span><span style="background:#fecaca; padding:2px 8px; border-radius:20px;">❌</span> Не пришёл</span>
-                <span><span style="background:#fde68a; padding:2px 8px; border-radius:20px;">📋</span> Отработка</span>
+                <span>🔵 Оценка 2-5</span>
+                <span>🔴 ❌ Не пришёл</span>
+                <span>🟡 📋 Отработка</span>
                 <span>🔴 Клик по оценке — удаление</span>
-                <span>🔄 Синхронизация 5 сек</span>
+                <span>🔄 Мгновенная синхронизация</span>
             </div>
         </div>
     </div>
 </div>
 
 <script>
-    // ============================================================
-    // НАСТРОЙКИ GITHUB (ЗАМЕНИТЕ НА СВОИ)
-    // ============================================================
-    const GITHUB_USERNAME = "diary-diary";        // ваш логин на GitHub
-    const GITHUB_REPO = "diary";                // название репозитория
-    const GITHUB_TOKEN = "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";           // ваш токен (ghp_...)
-    // ============================================================
+    // ==================================================
+    // КОНФИГ FIREBASE
+    // ==================================================
+    const firebaseConfig = {
+        apiKey: "AIzaSyArg3bVR6kGDU6XoM74ljpLfBDQ-lC9m4Y",
+        authDomain: "diary-6f282.firebaseapp.com",
+        databaseURL: "https://diary-6f282-default-rtdb.europe-west1.firebasedatabase.app",
+        projectId: "diary-6f282",
+        storageBucket: "diary-6f282.firebasestorage.app",
+        messagingSenderId: "263486503788",
+        appId: "1:263486503788:web:bfd1ff03d4d3829dfd5149",
+        measurementId: "G-B9N7FS8RLM"
+    };
+    // ==================================================
 
-    const API_URL = `https://api.github.com/repos/${GITHUB_USERNAME}/${GITHUB_REPO}/contents/data.json`;
-    const RAW_URL = `https://raw.githubusercontent.com/${GITHUB_USERNAME}/${GITHUB_REPO}/main/data.json`;
+    firebase.initializeApp(firebaseConfig);
+    const database = firebase.database();
+
     const SUBJECTS = ["Военно Тактическая Подготовка", "Русский язык", "Юридический"];
-    let appData = null;
     let currentUser = null;
-    let syncTimer = null;
-    let isSaving = false;
-    let isLoading = false;
 
-    function setStatus(type, text) {
-        const el = document.getElementById('status');
-        if (!el) return;
-        el.textContent = text;
-        el.className = `status ${type}`;
-        setTimeout(() => {
-            if (document.getElementById('status')?.className === `status ${type}`) {
-                const st = document.getElementById('status');
-                if (st) { st.className = 'status'; st.textContent = '✨ Готово'; }
+    function listenCadets() {
+        const cadetsRef = database.ref('cadets');
+        cadetsRef.on('value', (snapshot) => {
+            const data = snapshot.val();
+            window.cadetsData = data ? Object.values(data) : [];
+            if (document.getElementById('teacherPanel').style.display === 'block') {
+                renderTeacherTable();
             }
-        }, 2000);
-    }
-
-    // ---- ЗАГРУЗКА ИЗ GITHUB (полная замена локальных данных) ----
-    async function loadFromGitHub() {
-        if (isLoading) return false;
-        isLoading = true;
-        try {
-            const res = await fetch(RAW_URL + '?t=' + Date.now());
-            if (res.ok) {
-                const remote = await res.json();
-                if (remote && remote.cadets !== undefined) {
-                    appData = remote;
-                    localStorage.setItem('diary_backup', JSON.stringify(appData));
-                    setStatus('synced', '✅ Загружено из GitHub');
-                    if (currentUser) renderTeacherTable();
-                    return true;
-                }
-            } else if (res.status === 404) {
-                // Файла нет – создаём
-                appData = {
-                    users: [{ id: "t1", login: "teacher", password: "123", role: "teacher", name: "Преподаватель" }],
-                    cadets: []
-                };
-                await saveToGitHub();
-                return true;
-            }
-            throw new Error('Ошибка загрузки');
-        } catch(e) {
-            setStatus('error', '⚠️ Ошибка загрузки');
-            const local = localStorage.getItem('diary_backup');
-            if (local) appData = JSON.parse(local);
-            else appData = { users: [{ id: "t1", login: "teacher", password: "123", role: "teacher" }], cadets: [] };
-            return false;
-        } finally {
-            isLoading = false;
-        }
-    }
-
-    // ---- СОХРАНЕНИЕ В GITHUB (полная замена удалённого файла) ----
-    async function saveToGitHub() {
-        if (!appData || isSaving) return false;
-        isSaving = true;
-        localStorage.setItem('diary_backup', JSON.stringify(appData));
-        try {
-            const content = btoa(unescape(encodeURIComponent(JSON.stringify(appData, null, 2))));
-            let sha = null;
-            const getRes = await fetch(API_URL, {
-                headers: { 'Authorization': `token ${GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json' }
-            });
-            if (getRes.ok) {
-                const info = await getRes.json();
-                sha = info.sha;
-            }
-            const res = await fetch(API_URL, {
-                method: 'PUT',
-                headers: {
-                    'Authorization': `token ${GITHUB_TOKEN}`,
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/vnd.github.v3+json'
-                },
-                body: JSON.stringify({
-                    message: `Обновление ${new Date().toLocaleString()}`,
-                    content: content,
-                    sha: sha,
-                    branch: 'main'
-                })
-            });
-            if (res.ok) {
-                setStatus('synced', '💾 Сохранено в GitHub');
-                return true;
-            }
-            return false;
-        } catch(e) {
-            setStatus('error', '⚠️ Ошибка сохранения');
-            return false;
-        } finally {
-            isSaving = false;
-        }
-    }
-
-    // ---- ОСНОВНАЯ ФУНКЦИЯ ДЛЯ ЛЮБЫХ ИЗМЕНЕНИЙ: сначала меняем локально, затем сохраняем в GitHub, затем загружаем из GitHub, затем обновляем экран ----
-    async function changeAndSync(changeCallback) {
-        // 1. Изменяем локальные данные
-        changeCallback();
-        // 2. Сохраняем в GitHub
-        await saveToGitHub();
-        // 3. Загружаем из GitHub (чтобы получить единую версию)
-        await loadFromGitHub();
-        // 4. loadFromGitHub уже обновила таблицу, но на всякий случай вызовем рендер
-        renderTeacherTable();
-    }
-
-    // ---- ФОНОВАЯ СИНХРОНИЗАЦИЯ (только загрузка, без сохранения) ----
-    async function backgroundSync() {
-        if (currentUser && !isSaving && !isLoading) {
-            const oldDataStr = JSON.stringify(appData);
-            await loadFromGitHub();
-            if (oldDataStr !== JSON.stringify(appData)) {
-                setStatus('synced', '🔄 Получены изменения с GitHub');
-            }
-        }
-    }
-
-    function startAutoSync() {
-        if (syncTimer) clearInterval(syncTimer);
-        syncTimer = setInterval(backgroundSync, 5000);
-    }
-
-    function getCadets() { return appData?.cadets || []; }
-    function getCadetById(id) { return appData?.cadets.find(c => c.id === id); }
-    function fullName(c) { return `${c.surname} ${c.name} ${c.patronymic}`.trim(); }
-
-    function getNumericValue(mark) {
-        if (mark === 'н' || mark === 'о') return 0;
-        const num = parseInt(mark);
-        return isNaN(num) ? 0 : num;
-    }
-
-    function getAllNumericGrades(cadet) {
-        const values = [];
-        SUBJECTS.forEach(subj => {
-            if (cadet.grades?.[subj]) {
-                cadet.grades[subj].forEach(m => values.push(getNumericValue(m)));
-            }
+            setStatus('🔄 Данные обновлены');
         });
-        return values;
     }
 
-    function avgFromArray(arr) {
-        if (!arr.length) return "—";
-        const sum = arr.reduce((a, b) => a + b, 0);
-        return (sum / arr.length).toFixed(1);
+    function setStatus(msg) {
+        const el = document.getElementById('status');
+        if (el) {
+            el.textContent = msg;
+            setTimeout(() => {
+                if (document.getElementById('status')?.textContent === msg) {
+                    el.textContent = '✨ Готово';
+                }
+            }, 2000);
+        }
     }
 
     async function addCadet(surname, name, patronymic) {
-        await changeAndSync(() => {
-            const newId = "c" + Date.now();
-            const gradesInit = {};
-            SUBJECTS.forEach(s => gradesInit[s] = []);
-            appData.cadets.push({ id: newId, surname, name, patronymic, grades: gradesInit });
-        });
+        const newId = Date.now().toString();
+        // Убрали принудительное создание пустых массивов grades, 
+        // так как Firebase их всё равно не сохраняет.
+        const cadet = {
+            id: newId,
+            surname, name, patronymic
+        };
+        await database.ref(`cadets/${newId}`).set(cadet);
+        setStatus('✅ Курсант добавлен');
     }
 
     async function deleteCadet(id) {
-        await changeAndSync(() => {
-            appData.cadets = appData.cadets.filter(c => c.id !== id);
-        });
+        await database.ref(`cadets/${id}`).remove();
+        setStatus('🗑️ Курсант удалён');
     }
 
-    async function addMark(cid, subj, markValue) {
-        await changeAndSync(() => {
-            const c = getCadetById(cid);
-            if (!c) return;
-            const allowed = ['2','3','4','5','н','о'];
-            if (!allowed.includes(markValue)) return;
-            if (!c.grades[subj]) c.grades[subj] = [];
-            c.grades[subj].push(markValue);
-        });
+    async function addMark(cadetId, subject, mark) {
+        const ref = database.ref(`cadets/${cadetId}/grades/${subject}`);
+        const snapshot = await ref.once('value');
+        const marks = snapshot.val() || [];
+        marks.push(mark);
+        await ref.set(marks);
+        setStatus('⭐ Оценка добавлена');
     }
 
-    async function deleteMarkByIndex(cid, subj, index) {
-        await changeAndSync(() => {
-            const c = getCadetById(cid);
-            if (c && c.grades[subj] && c.grades[subj][index] !== undefined) {
-                c.grades[subj].splice(index, 1);
-            }
-        });
+    async function removeLastMark(cadetId, subject) {
+        const ref = database.ref(`cadets/${cadetId}/grades/${subject}`);
+        const snapshot = await ref.once('value');
+        let marks = snapshot.val() || [];
+        if (marks.length > 0) {
+            marks.pop();
+            await ref.set(marks);
+            setStatus('🗑️ Последняя оценка удалена');
+        }
     }
 
-    async function removeLastMark(cid, subj) {
-        await changeAndSync(() => {
-            const c = getCadetById(cid);
-            if (c && c.grades[subj]?.length) {
-                c.grades[subj].pop();
-            }
-        });
+    async function deleteMarkByIndex(cadetId, subject, index) {
+        const ref = database.ref(`cadets/${cadetId}/grades/${subject}`);
+        const snapshot = await ref.once('value');
+        let marks = snapshot.val() || [];
+        if (marks[index]) {
+            marks.splice(index, 1);
+            await ref.set(marks);
+            setStatus('❌ Оценка удалена');
+        }
     }
 
-    function getMarkDisplay(mark) {
-        if (mark === 'н') return '❌ н';
-        if (mark === 'о') return '📋 о';
-        return mark;
+    // Изменена логика подсчета: "н" и "о" не конвертируются в 0, 
+    // а просто игнорируются при подсчете академического среднего балла.
+    function avg(grades) {
+        if (!grades || !grades.length) return "—";
+        const numeric = grades
+            .map(g => parseInt(g))
+            .filter(num => !isNaN(num)); // Оставляем только числа (2,3,4,5)
+            
+        if (!numeric.length) return "—";
+        const sum = numeric.reduce((a, b) => a + b, 0);
+        return (sum / numeric.length).toFixed(1);
     }
 
-    function getMarkClass(mark) {
-        if (mark === 'н') return 'absent';
-        if (mark === 'о') return 'task';
-        return 'normal';
-    }
+    function getMarkDisplay(m) { return m === 'н' ? '❌ н' : (m === 'о' ? '📋 о' : m); }
+    function getMarkClass(m) { return m === 'н' ? 'absent' : (m === 'о' ? 'task' : 'normal'); }
 
     function renderTeacherTable() {
-        const thead = document.getElementById("tableHeader");
-        const tbody = document.getElementById("tableBody");
+        const thead = document.getElementById('tableHeader');
+        const tbody = document.getElementById('tableBody');
         if (!thead || !tbody) return;
-        const cadets = getCadets();
+        const cadets = window.cadetsData || [];
 
-        let headerHtml = `<tr><th>👤 ФИО курсанта</th>`;
+        let headerHtml = `<tr><th>👤 ФИО</th>`;
         SUBJECTS.forEach(s => headerHtml += `<th>${s}</th>`);
-        headerHtml += `<th>📊 Средний балл</th><th>⚙️</th>`;
+        headerHtml += `<th>Средний</th><th></th></tr>`;
         thead.innerHTML = headerHtml;
 
         if (!cadets.length) {
-            tbody.innerHTML = `<tr><td colspan="6" class="empty-row">📭 Нет курсантов. Добавьте первого!<\/td><\/tr>`;
+            // Исправлен экранированный слеш <\/td> -> </td>
+            tbody.innerHTML = `<tr><td colspan="6" class="empty-row">📭 Нет курсантов. Добавьте первого!</td></tr>`;
             return;
         }
 
         tbody.innerHTML = '';
         for (const cadet of cadets) {
-            const numericGrades = getAllNumericGrades(cadet);
-            const totalAvg = avgFromArray(numericGrades);
+            let allGrades = [];
+            // БЕЗОПАСНАЯ ПРОВЕРКА: получаем grades или пустой объект, если он был удален Firebase
+            const safeGrades = cadet.grades || {}; 
+            
+            SUBJECTS.forEach(subj => {
+                if (safeGrades[subj]) allGrades.push(...safeGrades[subj]);
+            });
+            const totalAvg = avg(allGrades);
             const row = document.createElement('tr');
-
             const nameCell = document.createElement('td');
-            nameCell.innerText = fullName(cadet);
+            nameCell.innerText = `${cadet.surname} ${cadet.name} ${cadet.patronymic}`;
             nameCell.style.fontWeight = 'bold';
             row.appendChild(nameCell);
 
             for (const subj of SUBJECTS) {
-                const marks = cadet.grades[subj] || [];
+                // БЕЗОПАСНАЯ ПРОВЕРКА для каждого предмета
+                const marks = safeGrades[subj] || [];
+                
                 const td = document.createElement('td');
-
                 const marksDiv = document.createElement('div');
                 marksDiv.className = 'grades-list';
                 for (let i = 0; i < marks.length; i++) {
-                    const badge = document.createElement('div');
+                    const badge = document.createElement('span');
                     badge.className = `grade-badge ${getMarkClass(marks[i])}`;
                     badge.innerText = getMarkDisplay(marks[i]);
                     badge.style.cursor = 'pointer';
@@ -390,7 +418,7 @@
                 const delLastBtn = document.createElement('button');
                 delLastBtn.innerText = '🗑️';
                 delLastBtn.className = 'action-btn del-last';
-                delLastBtn.onclick = () => { if (marks.length) removeLastMark(cadet.id, subj); };
+                delLastBtn.onclick = () => removeLastMark(cadet.id, subj);
                 controlDiv.appendChild(select);
                 controlDiv.appendChild(addBtn);
                 controlDiv.appendChild(delLastBtn);
@@ -405,9 +433,7 @@
             const delCadetBtn = document.createElement('button');
             delCadetBtn.innerText = '🗑️';
             delCadetBtn.className = 'delete-cadet-btn';
-            delCadetBtn.onclick = () => {
-                if (confirm(`Удалить курсанта ${fullName(cadet)}?`)) deleteCadet(cadet.id);
-            };
+            delCadetBtn.onclick = () => { if (confirm('Удалить курсанта?')) deleteCadet(cadet.id); };
             actionCell.appendChild(delCadetBtn);
             row.appendChild(avgCell);
             row.appendChild(actionCell);
@@ -415,35 +441,29 @@
         }
     }
 
-    async function login(loginVal, pwd) {
-        if (!appData) await loadFromGitHub();
-        const user = appData.users.find(u => u.login === loginVal && u.password === pwd && u.role === 'teacher');
-        if (!user) {
-            document.getElementById('loginError').innerText = 'Неверный логин или пароль';
-            return false;
+    function login(loginVal, pwd) {
+        if (loginVal === 'teacher' && pwd === '123') {
+            document.getElementById('loginForm').style.display = 'none';
+            document.getElementById('teacherPanel').style.display = 'block';
+            listenCadets();   
+            setStatus('✅ Вход выполнен');
+            return true;
         }
-        currentUser = user;
-        document.getElementById('loginForm').style.display = 'none';
-        document.getElementById('teacherPanel').style.display = 'block';
-        renderTeacherTable();
-        startAutoSync();
-        return true;
+        document.getElementById('loginError').innerText = 'Неверный логин или пароль';
+        return false;
     }
 
     function logout() {
-        currentUser = null;
-        if (syncTimer) clearInterval(syncTimer);
         document.getElementById('loginForm').style.display = 'block';
         document.getElementById('teacherPanel').style.display = 'none';
-        document.getElementById('loginError').innerText = '';
-        document.getElementById('loginInput').value = '';
-        document.getElementById('passwordInput').value = '';
+        database.ref('cadets').off(); 
+        setStatus('👋 Вы вышли');
     }
 
     document.getElementById('loginBtn').onclick = () => {
         login(document.getElementById('loginInput').value.trim(), document.getElementById('passwordInput').value.trim());
     };
-    document.getElementById('logoutTeacher').onclick = logout;
+    document.getElementById('logoutBtn').onclick = logout;
 
     document.getElementById('addCadetBtn').onclick = async () => {
         const surname = document.getElementById('newSurname').value.trim();
@@ -459,9 +479,9 @@
         }
     };
 
-    document.addEventListener('DOMContentLoaded', async () => {
+    document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('loginForm').style.display = 'block';
-        await loadFromGitHub();
+        setStatus('✨ Готово');
     });
 </script>
 </body>

@@ -1,6 +1,12 @@
 {
   "users": [
-    { "id": "t1", "login": "teacher", "password": "123", "role": "teacher", "name": "Преподаватель" }
+    {
+      "id": "t1",
+      "login": "teacher",
+      "password": "123",
+      "role": "teacher",
+      "name": "Преподаватель"
+    }
   ],
   "cadets": []
 }

@@ -105,7 +105,7 @@
                 <span><span style="background:#fecaca; padding:2px 8px; border-radius:20px;">❌</span> Не пришёл</span>
                 <span><span style="background:#fde68a; padding:2px 8px; border-radius:20px;">📋</span> Отработка</span>
                 <span>🔴 Клик по оценке — удаление</span>
-                <span>🔄 Синхронизация</span>
+                <span>🔄 Синхронизация 5 сек</span>
             </div>
         </div>
     </div>
@@ -113,11 +113,11 @@
 
 <script>
     // ============================================================
-    // НАСТРОЙКИ GITHUB - ЗАМЕНИТЕ НА ВАШИ!
+    // НАСТРОЙКИ GITHUB (ЗАМЕНИТЕ НА СВОИ)
     // ============================================================
-    const GITHUB_USERNAME = "diary-diary";        // ← ваш логин на GitHub
-    const GITHUB_REPO = "diary";                // ← название репозитория
-    const GITHUB_TOKEN = "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";           // ← ваш токен (ghp_...)
+    const GITHUB_USERNAME = "ВАШ_ЛОГИН";        // ваш логин на GitHub
+    const GITHUB_REPO = "diary";                // название репозитория
+    const GITHUB_TOKEN = "ВАШ_ТОКЕН";           // ваш токен (ghp_...)
     // ============================================================
 
     const API_URL = `https://api.github.com/repos/${GITHUB_USERNAME}/${GITHUB_REPO}/contents/data.json`;
@@ -127,7 +127,7 @@
     let currentUser = null;
     let syncTimer = null;
     let isSaving = false;
-    let isFirstLoad = true;
+    let isLoading = false;
 
     function setStatus(type, text) {
         const el = document.getElementById('status');
@@ -142,21 +142,23 @@
         }, 2000);
     }
 
-    // ЗАГРУЗКА ДАННЫХ ИЗ GITHUB
-    async function loadFromGitHub(silent = false) {
+    // Загрузка из GitHub (полная замена локальных данных)
+    async function loadFromGitHub() {
+        if (isLoading) return false;
+        isLoading = true;
         try {
             const res = await fetch(RAW_URL + '?t=' + Date.now());
             if (res.ok) {
-                const remoteData = await res.json();
-                if (remoteData && remoteData.cadets !== undefined) {
-                    appData = remoteData;
+                const remote = await res.json();
+                if (remote && remote.cadets !== undefined) {
+                    appData = remote;
                     localStorage.setItem('diary_backup', JSON.stringify(appData));
-                    if (!silent) setStatus('synced', '✅ Загружено');
+                    setStatus('synced', '✅ Загружено');
                     if (currentUser) renderTeacherTable();
                     return true;
                 }
             } else if (res.status === 404) {
-                // Создаём начальные данные
+                // Файл не существует → создаём начальные данные
                 appData = {
                     users: [{ id: "t1", login: "teacher", password: "123", role: "teacher", name: "Преподаватель" }],
                     cadets: []
@@ -166,24 +168,21 @@
             }
             throw new Error('Ошибка');
         } catch(e) {
-            if (!silent) setStatus('error', '⚠️ Ошибка');
+            setStatus('error', '⚠️ Ошибка загрузки');
             const local = localStorage.getItem('diary_backup');
-            if (local) {
-                appData = JSON.parse(local);
-            } else {
-                appData = { users: [{ id: "t1", login: "teacher", password: "123", role: "teacher" }], cadets: [] };
-            }
+            if (local) appData = JSON.parse(local);
+            else appData = { users: [{ id: "t1", login: "teacher", password: "123", role: "teacher" }], cadets: [] };
             return false;
+        } finally {
+            isLoading = false;
         }
     }
 
-    // СОХРАНЕНИЕ В GITHUB (полная замена)
+    // Сохранение в GitHub (полная замена удалённых данных)
     async function saveToGitHub() {
         if (!appData || isSaving) return false;
         isSaving = true;
-        
         localStorage.setItem('diary_backup', JSON.stringify(appData));
-        
         try {
             const content = btoa(unescape(encodeURIComponent(JSON.stringify(appData, null, 2))));
             let sha = null;
@@ -194,7 +193,6 @@
                 const info = await getRes.json();
                 sha = info.sha;
             }
-            
             const res = await fetch(API_URL, {
                 method: 'PUT',
                 headers: {
@@ -209,36 +207,35 @@
                     branch: 'main'
                 })
             });
-            
             if (res.ok) {
                 setStatus('synced', '💾 Сохранено');
                 return true;
             }
             return false;
         } catch(e) {
-            setStatus('error', '⚠️ Ошибка');
+            setStatus('error', '⚠️ Ошибка сохранения');
             return false;
         } finally {
             isSaving = false;
         }
     }
 
-    // ГЛАВНАЯ ФУНКЦИЯ: сохраняем текущие данные, потом обновляем таблицу
-    async function saveCurrentData() {
-        await saveToGitHub();
-        renderTeacherTable();
+    // Функция для любых изменений: сохраняем в GitHub и обновляем экран
+    async function applyChangeAndSave(changeCallback) {
+        changeCallback();          // 1. изменяем локальные данные
+        await saveToGitHub();      // 2. сохраняем в GitHub
+        renderTeacherTable();      // 3. обновляем экран
     }
 
-    // Фоновая синхронизация: загружаем новые данные (не сохраняя текущие!)
+    // Фоновая синхронизация: загружаем новые данные, если они изменились на GitHub
     async function backgroundSync() {
-        if (currentUser && !isSaving && !isFirstLoad) {
+        if (currentUser && !isSaving && !isLoading) {
             const oldDataStr = JSON.stringify(appData);
-            await loadFromGitHub(true);
+            await loadFromGitHub();
             if (oldDataStr !== JSON.stringify(appData)) {
                 setStatus('synced', '🔄 Новые данные');
             }
         }
-        isFirstLoad = false;
     }
 
     function startAutoSync() {
@@ -273,42 +270,47 @@
     }
 
     async function addCadet(surname, name, patronymic) {
-        const newId = "c" + Date.now();
-        const gradesInit = {};
-        SUBJECTS.forEach(s => gradesInit[s] = []);
-        appData.cadets.push({ id: newId, surname, name, patronymic, grades: gradesInit });
-        await saveCurrentData();
+        await applyChangeAndSave(() => {
+            const newId = "c" + Date.now();
+            const gradesInit = {};
+            SUBJECTS.forEach(s => gradesInit[s] = []);
+            appData.cadets.push({ id: newId, surname, name, patronymic, grades: gradesInit });
+        });
     }
 
     async function deleteCadet(id) {
-        appData.cadets = appData.cadets.filter(c => c.id !== id);
-        await saveCurrentData();
+        await applyChangeAndSave(() => {
+            appData.cadets = appData.cadets.filter(c => c.id !== id);
+        });
     }
 
     async function addMark(cid, subj, markValue) {
-        const c = getCadetById(cid);
-        if (!c) return;
-        const allowed = ['2','3','4','5','н','о'];
-        if (!allowed.includes(markValue)) return;
-        if (!c.grades[subj]) c.grades[subj] = [];
-        c.grades[subj].push(markValue);
-        await saveCurrentData();
+        await applyChangeAndSave(() => {
+            const c = getCadetById(cid);
+            if (!c) return;
+            const allowed = ['2','3','4','5','н','о'];
+            if (!allowed.includes(markValue)) return;
+            if (!c.grades[subj]) c.grades[subj] = [];
+            c.grades[subj].push(markValue);
+        });
     }
 
     async function deleteMarkByIndex(cid, subj, index) {
-        const c = getCadetById(cid);
-        if (c && c.grades[subj] && c.grades[subj][index] !== undefined) {
-            c.grades[subj].splice(index, 1);
-            await saveCurrentData();
-        }
+        await applyChangeAndSave(() => {
+            const c = getCadetById(cid);
+            if (c && c.grades[subj] && c.grades[subj][index] !== undefined) {
+                c.grades[subj].splice(index, 1);
+            }
+        });
     }
 
     async function removeLastMark(cid, subj) {
-        const c = getCadetById(cid);
-        if (c && c.grades[subj]?.length) {
-            c.grades[subj].pop();
-            await saveCurrentData();
-        }
+        await applyChangeAndSave(() => {
+            const c = getCadetById(cid);
+            if (c && c.grades[subj]?.length) {
+                c.grades[subj].pop();
+            }
+        });
     }
 
     function getMarkDisplay(mark) {
@@ -335,7 +337,7 @@
         thead.innerHTML = headerHtml;
 
         if (!cadets.length) {
-            tbody.innerHTML = `<td><td colspan="6" class="empty-row">📭 Нет курсантов. Добавьте первого!<\/td><\/tr>`;
+            tbody.innerHTML = `<tr><td colspan="6" class="empty-row">📭 Нет курсантов. Добавьте первого!<\/td><\/tr>`;
             return;
         }
 

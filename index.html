@@ -28,7 +28,6 @@
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
         
-        /* Анимированный градиентный фон */
         @keyframes gradientBG {
             0% { background-position: 0% 50%; }
             50% { background-position: 100% 50%; }
@@ -52,7 +51,6 @@
             to { opacity: 1; transform: translateY(0); }
         }
 
-        /* Glassmorphism Карточки */
         .login-card, .main-panel {
             background: var(--card-bg);
             backdrop-filter: blur(20px);
@@ -77,7 +75,6 @@
         h1 { font-size: 2.2rem; font-weight: 800; background: linear-gradient(to right, #1e293b, #4f46e5); -webkit-background-clip: text; color: transparent; margin-bottom: 8px; }
         h3 { font-size: 1.2rem; font-weight: 700; color: #1e293b; margin-bottom: 20px; display: flex; align-items: center; gap: 8px; }
 
-        /* Элементы формы */
         input, select {
             width: 100%;
             padding: 16px 20px;
@@ -180,7 +177,6 @@
         }
         .btn-success:hover { transform: translateY(-2px); box-shadow: 0 15px 25px -10px var(--success); }
 
-        /* Кастомный скроллбар */
         .table-wrapper { 
             overflow-x: auto; 
             border-radius: 24px;
@@ -221,7 +217,6 @@
         .grades-table tbody tr:hover td { background: #f8fafc; }
         .grades-table td:first-child { font-weight: 700; color: #1e293b; font-size: 1.05rem; }
 
-        /* Стильные Оценки */
         .grades-list { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
 
         .grade-badge {
@@ -241,7 +236,6 @@
 
         .grade-badge:hover { transform: scale(1.15) translateY(-2px); box-shadow: 0 6px 12px rgba(0,0,0,0.1); z-index: 10; position: relative;}
 
-        /* Цвета оценок */
         .grade-5 { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
         .grade-4 { background: #dbeafe; color: #1e40af; border: 1px solid #bfdbfe; }
         .grade-3 { background: #fef08a; color: #854d0e; border: 1px solid #fde047; }
@@ -402,7 +396,7 @@
                             <th>Курсант</th>
                             <th style="text-align: center;">Военно-тактическая</th>
                             <th style="text-align: center;">Русский язык</th>
-                            <th style="text-align: center;">Юридический профиль</th>
+                            <th style="text-align: center;">Юридический</th>
                             <th style="text-align: center;">Средний балл</th>
                             <th style="text-align: center;">Управление</th>
                         </tr>
@@ -427,9 +421,6 @@
 </div>
 
 <script>
-    // ==================================================
-    // КОНФИГ FIREBASE
-    // ==================================================
     const firebaseConfig = {
         apiKey: "AIzaSyArg3bVR6kGDU6XoM74ljpLfBDQ-lC9m4Y",
         authDomain: "diary-6f282.firebaseapp.com",
@@ -440,7 +431,6 @@
         appId: "1:263486503788:web:bfd1ff03d4d3829dfd5149",
         measurementId: "G-B9N7FS8RLM"
     };
-    // ==================================================
 
     firebase.initializeApp(firebaseConfig);
     const database = firebase.database();
@@ -522,7 +512,6 @@
         return (sum / numeric.length).toFixed(1);
     }
 
-    // Присвоение цвета в зависимости от оценки
     function getMarkClass(m) { 
         if (m === '5') return 'grade-5';
         if (m === '4') return 'grade-4';

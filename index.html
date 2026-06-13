@@ -522,7 +522,7 @@
         return '';
     }
 
-    function renderTeacherTable() {
+function renderTeacherTable() {
         const tbody = document.getElementById('tableBody');
         if (!tbody) return;
         const cadets = window.cadetsData || [];
@@ -543,13 +543,19 @@
             const totalAvg = avg(allGrades);
             const row = document.createElement('tr');
             
+            // ЛОГИКА ОТОБРАЖЕНИЯ: 
+            // Если имя или отчество <= 2 символов, считаем это инициалами и пишем в одну строку
+            const isInitials = (cadet.name.length <= 2 || cadet.patronymic.length <= 2);
+            
+            const nameContent = isInitials 
+                ? `<div style="font-weight: 700; color: #1e293b;">${cadet.surname} ${cadet.name} ${cadet.patronymic}</div>`
+                : `<div style="font-weight: 700; color: #1e293b;">${cadet.surname} ${cadet.name}</div>
+                   <div style="font-size: 0.8rem; color: #64748b; margin-top: 2px;">${cadet.patronymic}</div>`;
+
             const nameCell = document.createElement('td');
             nameCell.innerHTML = `<div style="display: flex; align-items: center; gap: 12px;">
                                     <div style="width: 40px; height: 40px; background: #e2e8f0; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.2rem;">👤</div>
-                                    <div>
-                                        <div style="font-weight: 700; color: #1e293b;">${cadet.surname} ${cadet.name}</div>
-                                        <div style="font-size: 0.8rem; color: #64748b; margin-top: 2px;">${cadet.patronymic}</div>
-                                    </div>
+                                    <div>${nameContent}</div>
                                   </div>`;
             row.appendChild(nameCell);
 
@@ -584,13 +590,11 @@
                 const addBtn = document.createElement('button');
                 addBtn.innerHTML = '+';
                 addBtn.className = 'action-btn add';
-                addBtn.title = "Поставить оценку";
                 addBtn.onclick = () => addMark(cadet.id, subj, select.value);
                 
                 const delLastBtn = document.createElement('button');
                 delLastBtn.innerHTML = '−';
                 delLastBtn.className = 'action-btn del-last';
-                delLastBtn.title = "Удалить последнюю";
                 delLastBtn.onclick = () => removeLastMark(cadet.id, subj);
                 
                 controlDiv.appendChild(select);
@@ -602,13 +606,12 @@
 
             const avgCell = document.createElement('td');
             avgCell.className = 'avg-cell';
-            avgCell.innerHTML = `<span class="avg-pill" style="${totalAvg !== '—' && parseFloat(totalAvg) < 3.5 ? 'background: linear-gradient(135deg, #f59e0b, #d97706);' : ''} ${totalAvg !== '—' && parseFloat(totalAvg) < 2.5 ? 'background: linear-gradient(135deg, #ef4444, #dc2626);' : ''}">${totalAvg}</span>`;
+            avgCell.innerHTML = `<span class="avg-pill">${totalAvg}</span>`;
             
             const actionCell = document.createElement('td');
             const delCadetBtn = document.createElement('button');
             delCadetBtn.innerHTML = '🗑️';
             delCadetBtn.className = 'delete-cadet-btn';
-            delCadetBtn.title = "Отчислить курсанта";
             delCadetBtn.onclick = () => deleteCadet(cadet.id);
             
             actionCell.appendChild(delCadetBtn);

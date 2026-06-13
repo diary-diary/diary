@@ -67,7 +67,7 @@
             <div id="loginError" class="error"></div>
             <div style="margin-top: 30px; font-size: 0.7rem; color: #94a3b8;">
                 🔐 Преподаватель: <strong>teacher</strong> / <strong>123</strong><br>
-                ☁️ Синхронизация через GitHub
+                ☁️ Синхронизация: сначала в GitHub, потом из GitHub
             </div>
         </div>
     </div>
@@ -142,7 +142,7 @@
         }, 2000);
     }
 
-    // Загрузка из GitHub
+    // ---- ЗАГРУЗКА ИЗ GITHUB (полная замена локальных данных) ----
     async function loadFromGitHub() {
         if (isLoading) return false;
         isLoading = true;
@@ -153,12 +153,12 @@
                 if (remote && remote.cadets !== undefined) {
                     appData = remote;
                     localStorage.setItem('diary_backup', JSON.stringify(appData));
+                    setStatus('synced', '✅ Загружено из GitHub');
                     if (currentUser) renderTeacherTable();
-                    setStatus('synced', '✅ Загружено');
                     return true;
                 }
             } else if (res.status === 404) {
-                // Файл не существует → создаём начальные данные и сохраняем
+                // Файла нет – создаём
                 appData = {
                     users: [{ id: "t1", login: "teacher", password: "123", role: "teacher", name: "Преподаватель" }],
                     cadets: []
@@ -168,7 +168,6 @@
             }
             throw new Error('Ошибка загрузки');
         } catch(e) {
-            console.error('loadFromGitHub error:', e);
             setStatus('error', '⚠️ Ошибка загрузки');
             const local = localStorage.getItem('diary_backup');
             if (local) appData = JSON.parse(local);
@@ -179,7 +178,7 @@
         }
     }
 
-    // Сохранение в GitHub
+    // ---- СОХРАНЕНИЕ В GITHUB (полная замена удалённого файла) ----
     async function saveToGitHub() {
         if (!appData || isSaving) return false;
         isSaving = true;
@@ -210,14 +209,10 @@
             });
             if (res.ok) {
                 setStatus('synced', '💾 Сохранено в GitHub');
-                console.log('Saved to GitHub successfully');
                 return true;
-            } else {
-                console.error('Save failed, status:', res.status);
-                return false;
             }
+            return false;
         } catch(e) {
-            console.error('saveToGitHub error:', e);
             setStatus('error', '⚠️ Ошибка сохранения');
             return false;
         } finally {
@@ -225,21 +220,25 @@
         }
     }
 
-    // Функция для изменений: сначала меняем локально, потом сохраняем, потом обновляем таблицу
-    async function applyChangeAndSync(changeCallback) {
-        changeCallback();          // меняем локальные данные
-        await saveToGitHub();      // сохраняем в GitHub
-        renderTeacherTable();      // обновляем экран (loadFromGitHub не нужна, т.к. мы сами изменили)
-        // Небольшая задержка для синхронизации с другими устройствами (фоновая загрузка сама всё подтянет)
+    // ---- ОСНОВНАЯ ФУНКЦИЯ ДЛЯ ЛЮБЫХ ИЗМЕНЕНИЙ: сначала меняем локально, затем сохраняем в GitHub, затем загружаем из GitHub, затем обновляем экран ----
+    async function changeAndSync(changeCallback) {
+        // 1. Изменяем локальные данные
+        changeCallback();
+        // 2. Сохраняем в GitHub
+        await saveToGitHub();
+        // 3. Загружаем из GitHub (чтобы получить единую версию)
+        await loadFromGitHub();
+        // 4. loadFromGitHub уже обновила таблицу, но на всякий случай вызовем рендер
+        renderTeacherTable();
     }
 
-    // Фоновая синхронизация
+    // ---- ФОНОВАЯ СИНХРОНИЗАЦИЯ (только загрузка, без сохранения) ----
     async function backgroundSync() {
         if (currentUser && !isSaving && !isLoading) {
             const oldDataStr = JSON.stringify(appData);
             await loadFromGitHub();
             if (oldDataStr !== JSON.stringify(appData)) {
-                setStatus('synced', '🔄 Новые данные с GitHub');
+                setStatus('synced', '🔄 Получены изменения с GitHub');
             }
         }
     }
@@ -276,7 +275,7 @@
     }
 
     async function addCadet(surname, name, patronymic) {
-        await applyChangeAndSync(() => {
+        await changeAndSync(() => {
             const newId = "c" + Date.now();
             const gradesInit = {};
             SUBJECTS.forEach(s => gradesInit[s] = []);
@@ -285,13 +284,13 @@
     }
 
     async function deleteCadet(id) {
-        await applyChangeAndSync(() => {
+        await changeAndSync(() => {
             appData.cadets = appData.cadets.filter(c => c.id !== id);
         });
     }
 
     async function addMark(cid, subj, markValue) {
-        await applyChangeAndSync(() => {
+        await changeAndSync(() => {
             const c = getCadetById(cid);
             if (!c) return;
             const allowed = ['2','3','4','5','н','о'];
@@ -302,7 +301,7 @@
     }
 
     async function deleteMarkByIndex(cid, subj, index) {
-        await applyChangeAndSync(() => {
+        await changeAndSync(() => {
             const c = getCadetById(cid);
             if (c && c.grades[subj] && c.grades[subj][index] !== undefined) {
                 c.grades[subj].splice(index, 1);
@@ -311,7 +310,7 @@
     }
 
     async function removeLastMark(cid, subj) {
-        await applyChangeAndSync(() => {
+        await changeAndSync(() => {
             const c = getCadetById(cid);
             if (c && c.grades[subj]?.length) {
                 c.grades[subj].pop();
@@ -339,7 +338,7 @@
 
         let headerHtml = `<tr><th>👤 ФИО курсанта</th>`;
         SUBJECTS.forEach(s => headerHtml += `<th>${s}</th>`);
-        headerHtml += `<th>📊 Средний балл</th><th>⚙️</th></td>`;
+        headerHtml += `<th>📊 Средний балл</th><th>⚙️</th>`;
         thead.innerHTML = headerHtml;
 
         if (!cadets.length) {

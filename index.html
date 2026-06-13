@@ -40,11 +40,6 @@
             background-clip: text;
             color: transparent;
         }
-        .login-card .subtitle {
-            color: #64748b;
-            margin-bottom: 30px;
-            font-size: 0.9rem;
-        }
         .login-card input {
             width: 100%;
             padding: 15px 18px;
@@ -52,12 +47,10 @@
             border: 2px solid #e2e8f0;
             border-radius: 28px;
             font-size: 1rem;
-            transition: all 0.2s;
         }
         .login-card input:focus {
             outline: none;
             border-color: #2c5282;
-            box-shadow: 0 0 0 3px rgba(44,82,130,0.1);
         }
         .login-card button {
             width: 100%;
@@ -70,18 +63,12 @@
             font-weight: 600;
             cursor: pointer;
             margin-top: 20px;
-            transition: all 0.2s;
-        }
-        .login-card button:hover {
-            transform: scale(1.02);
-            box-shadow: 0 10px 25px -5px rgba(30,58,95,0.4);
         }
         .main-panel {
             background: rgba(255,255,255,0.96);
             border-radius: 40px;
             padding: 32px 36px;
             box-shadow: 0 25px 45px rgba(0,0,0,0.15);
-            animation: fadeIn 0.4s ease;
         }
         .panel-header {
             display: flex;
@@ -108,25 +95,12 @@
             border-radius: 40px;
             font-weight: 600;
             cursor: pointer;
-            transition: all 0.2s;
-        }
-        .logout-btn:hover {
-            background: #dc2626;
-            transform: translateY(-2px);
         }
         .add-cadet-form {
             background: linear-gradient(135deg, #f8fafc, #f1f5f9);
             border-radius: 28px;
             padding: 28px 30px;
             margin-bottom: 35px;
-        }
-        .add-cadet-form h3 {
-            color: #1e293b;
-            margin-bottom: 18px;
-            font-size: 1.2rem;
-            display: flex;
-            align-items: center;
-            gap: 8px;
         }
         .form-row {
             display: flex;
@@ -145,7 +119,6 @@
             text-transform: uppercase;
             color: #64748b;
             margin-bottom: 6px;
-            letter-spacing: 0.5px;
         }
         .form-group input {
             width: 100%;
@@ -154,11 +127,6 @@
             border: 1.5px solid #e2e8f0;
             border-radius: 20px;
             font-size: 0.9rem;
-            transition: all 0.2s;
-        }
-        .form-group input:focus {
-            outline: none;
-            border-color: #2c5282;
         }
         .add-cadet-form button {
             background: linear-gradient(135deg, #10b981, #059669);
@@ -168,12 +136,7 @@
             border-radius: 24px;
             font-weight: 600;
             cursor: pointer;
-            transition: all 0.2s;
             height: 46px;
-        }
-        .add-cadet-form button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(16,185,129,0.3);
         }
         .table-wrapper {
             overflow-x: auto;
@@ -193,8 +156,6 @@
             color: white;
             padding: 16px 12px;
             text-align: center;
-            font-weight: 600;
-            font-size: 0.85rem;
         }
         .grades-table th:first-child {
             text-align: left;
@@ -211,9 +172,6 @@
             padding-left: 20px;
             font-weight: 600;
             background: #fafdff;
-        }
-        .grades-table tr:hover td {
-            background: #fafcff;
         }
         .grades-list {
             display: flex;
@@ -232,7 +190,7 @@
             font-weight: 700;
             font-size: 0.85rem;
             cursor: pointer;
-            transition: all 0.2s ease;
+            transition: all 0.2s;
             padding: 0 10px;
         }
         .grade-badge.normal {
@@ -249,7 +207,6 @@
         }
         .grade-badge:hover {
             transform: scale(1.08);
-            filter: brightness(0.95);
         }
         .grade-control {
             display: flex;
@@ -266,7 +223,6 @@
             font-size: 0.8rem;
             background: white;
             cursor: pointer;
-            font-weight: 500;
         }
         .action-btn {
             background: #eef3fc;
@@ -282,17 +238,9 @@
             background: #2c5282;
             color: white;
         }
-        .action-btn.add:hover {
-            background: #1e3a5f;
-            transform: scale(1.05);
-        }
         .action-btn.del-last {
             background: #fee2e2;
             color: #b91c1c;
-        }
-        .action-btn.del-last:hover {
-            background: #fecaca;
-            transform: scale(1.05);
         }
         .delete-cadet-btn {
             background: #fee2e2;
@@ -302,11 +250,6 @@
             border-radius: 25px;
             cursor: pointer;
             font-size: 1rem;
-            transition: all 0.2s;
-        }
-        .delete-cadet-btn:hover {
-            background: #fecaca;
-            transform: scale(1.05);
         }
         .avg-cell {
             background: #ecfdf5;
@@ -318,21 +261,17 @@
             text-align: center;
             padding: 50px;
             color: #94a3b8;
-            font-style: italic;
         }
         .status {
             position: fixed;
             bottom: 20px;
             right: 20px;
             background: #1e293b;
-            backdrop-filter: blur(8px);
             color: white;
             padding: 8px 20px;
             border-radius: 40px;
             font-size: 0.7rem;
-            font-weight: 500;
             z-index: 1000;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
         }
         .status.syncing {
             background: #f59e0b;
@@ -354,25 +293,10 @@
             flex-wrap: wrap;
             font-size: 0.7rem;
         }
-        .legend span {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .legend .badge-small {
-            width: 28px;
-            height: 28px;
-            border-radius: 18px;
-            display: inline-block;
-        }
         .error {
             color: #dc2626;
             font-size: 0.8rem;
             margin-top: 10px;
-        }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
         }
     </style>
 </head>
@@ -384,14 +308,14 @@
         <div class="login-card">
             <div class="logo">⚖️</div>
             <h1>Академия Прокуратуры</h1>
-            <div class="subtitle">электронный журнал успеваемости</div>
-            <input type="text" id="loginInput" placeholder="Логин преподавателя">
+            <div style="color:#64748b; margin-bottom:30px;">электронный журнал</div>
+            <input type="text" id="loginInput" placeholder="Логин">
             <input type="password" id="passwordInput" placeholder="Пароль">
-            <button id="loginBtn">Войти в систему →</button>
+            <button id="loginBtn">Войти →</button>
             <div id="loginError" class="error"></div>
-            <div style="margin-top: 30px; font-size: 0.7rem; color: #94a3b8; border-top: 1px solid #e2e8f0; padding-top: 20px;">
+            <div style="margin-top: 30px; font-size: 0.7rem; color: #94a3b8;">
                 🔐 Преподаватель: <strong>teacher</strong> / <strong>123</strong><br>
-                ☁️ Данные синхронизируются через GitHub
+                ☁️ Синхронизация через GitHub
             </div>
         </div>
     </div>
@@ -399,43 +323,24 @@
     <div id="teacherPanel" style="display: none;">
         <div class="main-panel">
             <div class="panel-header">
-                <div class="header-title">
-                    <h1>📖 Журнал успеваемости</h1>
-                    <p style="font-size: 0.8rem; color: #64748b; margin-top: 4px;">Управление оценками и посещаемостью</p>
-                </div>
+                <h1>📖 Журнал успеваемости</h1>
                 <button id="logoutTeacher" class="logout-btn">🚪 Выйти</button>
             </div>
 
             <div class="add-cadet-form">
                 <h3>➕ Добавить курсанта</h3>
                 <div class="form-row">
-                    <div class="form-group">
-                        <label>Фамилия</label>
-                        <input type="text" id="newSurname" placeholder="Иванов">
-                    </div>
-                    <div class="form-group">
-                        <label>Имя</label>
-                        <input type="text" id="newName" placeholder="Иван">
-                    </div>
-                    <div class="form-group">
-                        <label>Отчество</label>
-                        <input type="text" id="newPatronymic" placeholder="Иванович">
-                    </div>
-                    <button id="addCadetBtn">➕ Добавить курсанта</button>
+                    <div class="form-group"><label>Фамилия</label><input type="text" id="newSurname" placeholder="Иванов"></div>
+                    <div class="form-group"><label>Имя</label><input type="text" id="newName" placeholder="Иван"></div>
+                    <div class="form-group"><label>Отчество</label><input type="text" id="newPatronymic" placeholder="Иванович"></div>
+                    <button id="addCadetBtn">➕ Добавить</button>
                 </div>
             </div>
 
             <div class="table-wrapper">
                 <table class="grades-table" id="gradesTable">
                     <thead id="tableHeader">
-                        <tr>
-                            <th>👤 ФИО курсанта</th>
-                            <th>Военно Тактическая Подготовка</th>
-                            <th>Русский язык</th>
-                            <th>Юридический</th>
-                            <th>📊 Средний балл</th>
-                            <th>⚙️</th>
-                        </tr>
+                        <tr><th>👤 ФИО курсанта</th><th>Военно Тактическая Подготовка</th><th>Русский язык</th><th>Юридический</th><th>📊 Средний</th><th>⚙️</th></tr>
                     </thead>
                     <tbody id="tableBody">
                         <tr><td colspan="6" class="empty-row">📭 Загрузка...<\/td><\/tr>
@@ -444,11 +349,11 @@
             </div>
 
             <div class="legend">
-                <span><div class="badge-small" style="background:#d1d9ff;"></div> Оценка (2-5)</span>
-                <span><div class="badge-small" style="background:#fecaca;"></div> ❌ Не пришёл</span>
-                <span><div class="badge-small" style="background:#fde68a;"></div> 📋 Отработка</span>
+                <span><span style="background:#d1d9ff; padding:2px 8px; border-radius:20px;">2-5</span> Оценка</span>
+                <span><span style="background:#fecaca; padding:2px 8px; border-radius:20px;">❌</span> Не пришёл</span>
+                <span><span style="background:#fde68a; padding:2px 8px; border-radius:20px;">📋</span> Отработка</span>
                 <span>🔴 Клик по оценке — удаление</span>
-                <span>🔄 Автосинхронизация 5 сек (GitHub)</span>
+                <span>🔄 Синхронизация 5 сек</span>
             </div>
         </div>
     </div>
@@ -469,7 +374,7 @@
     let appData = null;
     let currentUser = null;
     let syncTimer = null;
-    let isSyncing = false;
+    let isLoading = false;
     let isSaving = false;
 
     function setStatus(type, text) {
@@ -485,46 +390,40 @@
         }, 2000);
     }
 
-    async function loadFromGitHub() {
-        if (isSyncing) return false;
-        isSyncing = true;
+    // ТОЛЬКО ЗАГРУЗКА (без сохранения)
+    async function loadOnlyFromGitHub() {
+        if (isLoading) return false;
+        isLoading = true;
         try {
             const res = await fetch(RAW_URL + '?t=' + Date.now());
             if (res.ok) {
                 const remote = await res.json();
                 if (remote && remote.cadets !== undefined) {
                     appData = remote;
-                } else {
-                    throw new Error('Некорректные данные');
+                    localStorage.setItem('diary_backup', JSON.stringify(appData));
+                    if (currentUser) renderTeacherTable();
+                    return true;
                 }
-                localStorage.setItem('diary_backup', JSON.stringify(appData));
-                setStatus('synced', '📥 Загружено');
-                if (currentUser) renderTeacherTable();
-                return true;
             } else if (res.status === 404) {
                 appData = {
                     users: [{ id: "t1", login: "teacher", password: "123", role: "teacher", name: "Преподаватель" }],
                     cadets: []
                 };
-                await saveToGitHub();
+                await forceSaveToGitHub();
                 return true;
             }
-            throw new Error('Ошибка загрузки');
+            return false;
         } catch(e) {
-            setStatus('error', '⚠️ Ошибка');
             const local = localStorage.getItem('diary_backup');
-            if (local) {
-                appData = JSON.parse(local);
-            } else {
-                appData = { users: [{ id: "t1", login: "teacher", password: "123", role: "teacher" }], cadets: [] };
-            }
+            if (local) appData = JSON.parse(local);
             return false;
         } finally {
-            isSyncing = false;
+            isLoading = false;
         }
     }
 
-    async function saveToGitHub() {
+    // ПРИНУДИТЕЛЬНОЕ СОХРАНЕНИЕ (без загрузки)
+    async function forceSaveToGitHub() {
         if (!appData || isSaving) return false;
         isSaving = true;
         localStorage.setItem('diary_backup', JSON.stringify(appData));
@@ -565,19 +464,26 @@
         }
     }
 
-    async function autoSync() {
-        if (currentUser && !isSyncing && !isSaving) {
+    // Функция для изменений: СНАЧАЛА СОХРАНЯЕМ, ПОТОМ ЗАГРУЖАЕМ
+    async function saveAndThenLoad() {
+        await forceSaveToGitHub();
+        await loadOnlyFromGitHub();
+    }
+
+    // Фоновая синхронизация: просто загружаем новые данные (если есть)
+    async function backgroundSync() {
+        if (currentUser && !isLoading && !isSaving) {
             const oldDataStr = JSON.stringify(appData);
-            await loadFromGitHub();
+            await loadOnlyFromGitHub();
             if (oldDataStr !== JSON.stringify(appData)) {
-                renderTeacherTable();
+                setStatus('synced', '🔄 Обновлено');
             }
         }
     }
 
     function startAutoSync() {
         if (syncTimer) clearInterval(syncTimer);
-        syncTimer = setInterval(autoSync, 5000);
+        syncTimer = setInterval(backgroundSync, 5000);
     }
 
     function getCadets() { return appData?.cadets || []; }
@@ -615,13 +521,13 @@
             surname, name, patronymic,
             grades: gradesInit
         });
-        await saveToGitHub();
+        await saveAndThenLoad();
         renderTeacherTable();
     }
 
     async function deleteCadet(id) {
         appData.cadets = appData.cadets.filter(c => c.id !== id);
-        await saveToGitHub();
+        await saveAndThenLoad();
         renderTeacherTable();
     }
 
@@ -632,7 +538,7 @@
         if (!allowed.includes(markValue)) return;
         if (!c.grades[subj]) c.grades[subj] = [];
         c.grades[subj].push(markValue);
-        await saveToGitHub();
+        await saveAndThenLoad();
         renderTeacherTable();
     }
 
@@ -640,7 +546,7 @@
         const c = getCadetById(cid);
         if (c && c.grades[subj] && c.grades[subj][index] !== undefined) {
             c.grades[subj].splice(index, 1);
-            await saveToGitHub();
+            await saveAndThenLoad();
             renderTeacherTable();
         }
     }
@@ -649,7 +555,7 @@
         const c = getCadetById(cid);
         if (c && c.grades[subj]?.length) {
             c.grades[subj].pop();
-            await saveToGitHub();
+            await saveAndThenLoad();
             renderTeacherTable();
         }
     }
@@ -678,7 +584,7 @@
         thead.innerHTML = headerHtml;
 
         if (!cadets.length) {
-            tbody.innerHTML = `<tr><td colspan="6" class="empty-row">📭 Нет курсантов. Добавьте первого!<\/td><\/tr>`;
+            tbody.innerHTML = `<td><td colspan="6" class="empty-row">📭 Нет курсантов. Добавьте первого!<\/td><\/tr>`;
             return;
         }
 
@@ -751,8 +657,8 @@
         }
     }
 
-    function login(loginVal, pwd) {
-        if (!appData) return false;
+    async function login(loginVal, pwd) {
+        if (!appData) await loadOnlyFromGitHub();
         const user = appData.users.find(u => u.login === loginVal && u.password === pwd && u.role === 'teacher');
         if (!user) {
             document.getElementById('loginError').innerText = 'Неверный логин или пароль';
@@ -781,12 +687,12 @@
     };
     document.getElementById('logoutTeacher').onclick = logout;
 
-    document.getElementById('addCadetBtn').onclick = () => {
+    document.getElementById('addCadetBtn').onclick = async () => {
         const surname = document.getElementById('newSurname').value.trim();
         const name = document.getElementById('newName').value.trim();
         const patronymic = document.getElementById('newPatronymic').value.trim();
         if (surname && name && patronymic) {
-            addCadet(surname, name, patronymic);
+            await addCadet(surname, name, patronymic);
             document.getElementById('newSurname').value = '';
             document.getElementById('newName').value = '';
             document.getElementById('newPatronymic').value = '';
@@ -797,7 +703,7 @@
 
     document.addEventListener('DOMContentLoaded', async () => {
         document.getElementById('loginForm').style.display = 'block';
-        await loadFromGitHub();
+        await loadOnlyFromGitHub();
     });
 </script>
 </body>

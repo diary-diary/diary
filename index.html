@@ -97,7 +97,7 @@
                     <tbody id="tableBody">
                         <tr><td colspan="6" class="empty-row">📭 Загрузка...<\/td><\/tr>
                     </tbody>
-                </table>
+                <tr>
             </div>
 
             <div class="legend">
@@ -105,7 +105,7 @@
                 <span><span style="background:#fecaca; padding:2px 8px; border-radius:20px;">❌</span> Не пришёл</span>
                 <span><span style="background:#fde68a; padding:2px 8px; border-radius:20px;">📋</span> Отработка</span>
                 <span>🔴 Клик по оценке — удаление</span>
-                <span>🔄 Автосинхронизация 5 сек</span>
+                <span>🔄 Синхронизация (сохраняет изменения)</span>
             </div>
         </div>
     </div>
@@ -141,46 +141,63 @@
         }, 2000);
     }
 
-    async function loadData() {
+    // ЗАГРУЗКА ДАННЫХ ИЗ GITHUB (полная замена локальных данных)
+    async function loadFromGitHub() {
         try {
             const res = await fetch(RAW_URL + '?t=' + Date.now());
             if (res.ok) {
-                appData = await res.json();
-                localStorage.setItem('diary_backup', JSON.stringify(appData));
-                if (currentUser) renderTeacherTable();
-                setStatus('synced', '✅ Загружено');
-                return true;
+                const remoteData = await res.json();
+                if (remoteData && remoteData.cadets !== undefined) {
+                    appData = remoteData;
+                    localStorage.setItem('diary_backup', JSON.stringify(appData));
+                    if (currentUser) renderTeacherTable();
+                    setStatus('synced', '✅ Загружено из GitHub');
+                    return true;
+                }
             } else if (res.status === 404) {
-                // Файл data.json не найден — создаём начальные данные
+                // Создаём начальные данные, если файла нет
                 appData = {
                     users: [{ id: "t1", login: "teacher", password: "123", role: "teacher", name: "Преподаватель" }],
                     cadets: []
                 };
-                await saveData();
+                await saveToGitHub();
                 return true;
             }
             throw new Error('Ошибка загрузки');
         } catch(e) {
-            setStatus('error', '⚠️ Ошибка');
+            setStatus('error', '⚠️ Ошибка загрузки');
             const local = localStorage.getItem('diary_backup');
-            if (local) appData = JSON.parse(local);
-            else appData = { users: [{ id: "t1", login: "teacher", password: "123", role: "teacher" }], cadets: [] };
+            if (local) {
+                appData = JSON.parse(local);
+            } else {
+                appData = { users: [{ id: "t1", login: "teacher", password: "123", role: "teacher" }], cadets: [] };
+            }
             return false;
         }
     }
 
-    async function saveData() {
+    // СОХРАНЕНИЕ В GITHUB (полная замена удалённых данных)
+    async function saveToGitHub() {
         if (!appData || isSaving) return false;
         isSaving = true;
+        
+        // Сохраняем резервную копию
         localStorage.setItem('diary_backup', JSON.stringify(appData));
+        
         try {
             const content = btoa(unescape(encodeURIComponent(JSON.stringify(appData, null, 2))));
+            
+            // Получаем SHA текущего файла для обновления
             let sha = null;
-            const getRes = await fetch(API_URL, { headers: { 'Authorization': `token ${GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json' } });
+            const getRes = await fetch(API_URL, {
+                headers: { 'Authorization': `token ${GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json' }
+            });
             if (getRes.ok) {
                 const info = await getRes.json();
                 sha = info.sha;
             }
+            
+            // Отправляем обновление
             const res = await fetch(API_URL, {
                 method: 'PUT',
                 headers: {
@@ -195,32 +212,40 @@
                     branch: 'main'
                 })
             });
+            
             if (res.ok) {
-                setStatus('synced', '💾 Сохранено');
+                setStatus('synced', '💾 Сохранено в GitHub');
                 return true;
             }
             return false;
         } catch(e) {
-            setStatus('error', '⚠️ Ошибка');
+            setStatus('error', '⚠️ Ошибка сохранения');
             return false;
         } finally {
             isSaving = false;
         }
     }
 
-    async function autoSync() {
+    // ФУНКЦИЯ ДЛЯ ИЗМЕНЕНИЙ: сохраняем и обновляем таблицу
+    async function saveAndRender() {
+        await saveToGitHub();
+        renderTeacherTable();
+    }
+
+    // ФОНОВАЯ СИНХРОНИЗАЦИЯ: загружаем новые данные (если есть изменения от других)
+    async function backgroundSync() {
         if (currentUser && !isSaving) {
-            const oldData = JSON.stringify(appData);
-            await loadData();
-            if (oldData !== JSON.stringify(appData)) {
-                renderTeacherTable();
+            const oldDataStr = JSON.stringify(appData);
+            await loadFromGitHub();
+            if (oldDataStr !== JSON.stringify(appData)) {
+                setStatus('synced', '🔄 Получены новые данные');
             }
         }
     }
 
     function startAutoSync() {
         if (syncTimer) clearInterval(syncTimer);
-        syncTimer = setInterval(autoSync, 5000);
+        syncTimer = setInterval(backgroundSync, 5000);
     }
 
     function getCadets() { return appData?.cadets || []; }
@@ -254,14 +279,12 @@
         const gradesInit = {};
         SUBJECTS.forEach(s => gradesInit[s] = []);
         appData.cadets.push({ id: newId, surname, name, patronymic, grades: gradesInit });
-        await saveData();
-        renderTeacherTable();
+        await saveAndRender();
     }
 
     async function deleteCadet(id) {
         appData.cadets = appData.cadets.filter(c => c.id !== id);
-        await saveData();
-        renderTeacherTable();
+        await saveAndRender();
     }
 
     async function addMark(cid, subj, markValue) {
@@ -271,16 +294,14 @@
         if (!allowed.includes(markValue)) return;
         if (!c.grades[subj]) c.grades[subj] = [];
         c.grades[subj].push(markValue);
-        await saveData();
-        renderTeacherTable();
+        await saveAndRender();
     }
 
     async function deleteMarkByIndex(cid, subj, index) {
         const c = getCadetById(cid);
         if (c && c.grades[subj] && c.grades[subj][index] !== undefined) {
             c.grades[subj].splice(index, 1);
-            await saveData();
-            renderTeacherTable();
+            await saveAndRender();
         }
     }
 
@@ -288,8 +309,7 @@
         const c = getCadetById(cid);
         if (c && c.grades[subj]?.length) {
             c.grades[subj].pop();
-            await saveData();
-            renderTeacherTable();
+            await saveAndRender();
         }
     }
 
@@ -313,11 +333,11 @@
 
         let headerHtml = `<tr><th>👤 ФИО курсанта</th>`;
         SUBJECTS.forEach(s => headerHtml += `<th>${s}</th>`);
-        headerHtml += `<th>📊 Средний балл</th><th>⚙️</th><tr>`;
+        headerHtml += `<th>📊 Средний балл</th><th>⚙️</th></tr>`;
         thead.innerHTML = headerHtml;
 
         if (!cadets.length) {
-            tbody.innerHTML = `<td><td colspan="6" class="empty-row">📭 Нет курсантов. Добавьте первого!<\/td><\/tr>`;
+            tbody.innerHTML = `<tr><td colspan="6" class="empty-row">📭 Нет курсантов. Добавьте первого!<\/td><\/tr>`;
             return;
         }
 
@@ -391,7 +411,7 @@
     }
 
     async function login(loginVal, pwd) {
-        if (!appData) await loadData();
+        if (!appData) await loadFromGitHub();
         const user = appData.users.find(u => u.login === loginVal && u.password === pwd && u.role === 'teacher');
         if (!user) {
             document.getElementById('loginError').innerText = 'Неверный логин или пароль';
@@ -436,7 +456,7 @@
 
     document.addEventListener('DOMContentLoaded', async () => {
         document.getElementById('loginForm').style.display = 'block';
-        await loadData();
+        await loadFromGitHub();
     });
 </script>
 </body>

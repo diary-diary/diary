@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>CS2 Online - Integrated</title>
+    <style>
+        body, html { margin: 0; padding: 0; overflow: hidden; background: #111; font-family: sans-serif; color: white; }
+        #game-container { width: 100vw; height: 100vh; }
+        #menu { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #1a1a24; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 20; }
+        .menu-window { background: #000; padding: 40px; border: 2px solid #de9b35; text-align: center; }
+        input { padding: 10px; font-size: 18px; margin-bottom: 10px; }
+        button { background: #de9b35; padding: 10px 20px; border: none; font-weight: bold; cursor: pointer; }
+        #overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 15; display: flex; justify-content: center; align-items: center; cursor: pointer; }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+</head>
+<body>
+
+    <div id="menu">
+        <div class="menu-window">
+            <h1>CS2 ONLINE</h1>
+            <input type="text" id="room-code" value="mirage777"><br>
+            <input type="text" id="player-name" value="Player"><br>
+            <button onclick="connectAndPlay()">ВОЙТИ В ИГРУ</button>
+        </div>
+    </div>
+
+    <div id="overlay"><h2>КЛИКНИ, ЧТОБЫ НАЧАТЬ</h2></div>
+    <div id="game-container"></div>
+
+<script>
+    // Твои вставленные ключи
+    const firebaseConfig = {
+        apiKey: "AIzaSyB7fFeUjiv8YkrzFBRtezpmb8DtSVeQt0E",
+        authDomain: "gaming-chat-67a99.firebaseapp.com",
+        databaseURL: "https://gaming-chat-67a99-default-rtdb.europe-west1.firebasedatabase.app",
+        projectId: "gaming-chat-67a99",
+        storageBucket: "gaming-chat-67a99.firebasestorage.app",
+        messagingSenderId: "394329490082",
+        appId: "1:394329490082:web:ea1e2ddeeac9566d0acdfb",
+        measurementId: "G-P8M0NEJ1S2"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const database = firebase.database();
+
+    let scene, camera, renderer, yawObject, pitchObject;
+    let roomRef;
+    const myId = "p_" + Math.floor(Math.random()*100000);
+    const remotePlayers = {};
+
+    function connectAndPlay() {
+        const roomId = document.getElementById('room-code').value;
+        roomRef = database.ref(`rooms/${roomId}/players`);
+        document.getElementById('menu').style.display = 'none';
+        initThree();
+    }
+
+    function initThree() {
+        scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x222222);
+        camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
+        
+        renderer = new THREE.WebGLRenderer();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.getElementById('game-container').appendChild(renderer.domElement);
+
+        pitchObject = new THREE.Object3D();
+        yawObject = new THREE.Object3D();
+        yawObject.add(pitchObject);
+        pitchObject.add(camera);
+        scene.add(yawObject);
+
+        // Свет и Пол
+        scene.add(new THREE.AmbientLight(0xffffff, 0.8));
+        const floor = new THREE.Mesh(new THREE.PlaneGeometry(50, 50), new THREE.MeshStandardMaterial({color: 0x555555}));
+        floor.rotation.x = -Math.PI/2;
+        scene.add(floor);
+
+        // Слушатели Firebase
+        roomRef.on('child_added', s => { if(s.key !== myId) spawnRemote(s.key, s.val()); });
+        roomRef.on('child_changed', s => { if(s.key !== myId && remotePlayers[s.key]) updateRemote(s.key, s.val()); });
+        
+        document.getElementById('overlay').addEventListener('click', () => {
+            document.body.requestPointerLock();
+            document.getElementById('overlay').style.display = 'none';
+        });
+
+        animate();
+    }
+
+    function spawnRemote(id, data) {
+        const mesh = new THREE.Mesh(new THREE.BoxGeometry(0.5, 1.7, 0.5), new THREE.MeshStandardMaterial({color: 0xff0000}));
+        scene.add(mesh);
+        remotePlayers[id] = mesh;
+    }
+
+    function updateRemote(id, data) {
+        remotePlayers[id].position.set(data.x, 0.8, data.z);
+    }
+
+    function animate() {
+        requestAnimationFrame(animate);
+        // Синхронизация своего положения
+        if(roomRef) {
+            roomRef.child(myId).set({x: yawObject.position.x, z: yawObject.position.z});
+        }
+        renderer.render(scene, camera);
+    }
+</script>
+</body>
+</html>

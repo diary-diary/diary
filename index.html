@@ -96,6 +96,9 @@
         
         .add-cadet-form { background: rgba(248, 250, 252, 0.6); border-radius: 24px; padding: 24px; margin-bottom: 30px; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; align-items: flex-end; border: 1px solid var(--border-color); }
         
+        .table-controls { display: flex; justify-content: flex-end; margin-bottom: 15px; }
+        .search-cadet { padding: 12px 20px; border-radius: 12px; border: 2px solid #e2e8f0; width: 300px; background: rgba(255,255,255,0.8); font-weight: 500; }
+
         .table-wrapper { overflow-x: auto; border-radius: 24px; border: 1px solid var(--border-color); background: rgba(255, 255, 255, 0.5); }
         .grades-table { width: 100%; border-collapse: collapse; white-space: nowrap; }
         .grades-table th { background: rgba(248, 250, 252, 0.8); color: var(--text-muted); font-weight: 700; text-transform: uppercase; font-size: 0.8rem; padding: 20px; text-align: left; }
@@ -116,12 +119,21 @@
         /* Модалки и Логи */
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(8px); display: none; align-items: center; justify-content: center; z-index: 1000; }
         
-        .logs-container { max-height: 400px; overflow-y: auto; margin-top: 15px; border: 1px solid #e2e8f0; border-radius: 12px; background: white; }
+        .tabs { display: flex; gap: 10px; margin-bottom: 20px; }
+        .tab-btn { padding: 10px 20px; border-radius: 12px; border: 1px solid #e2e8f0; cursor: pointer; background: #f8fafc; font-weight: 600; color: var(--text-main); }
+        .tab-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
+        
+        .logs-content { display: none; }
+        .logs-content.active { display: block; }
+        .logs-container { max-height: 400px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 12px; background: white; }
         .logs-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
         .logs-table th { background: #f1f5f9; position: sticky; top: 0; padding: 12px; text-align: left; color: #64748b; font-weight: 700; z-index: 10; }
         .logs-table td { padding: 12px; border-bottom: 1px solid #e2e8f0; }
 
         .status { position: fixed; bottom: 20px; right: 20px; background: rgba(0,0,0,0.8); color: white; padding: 10px 20px; border-radius: 30px; font-size: 0.9rem; display: none; z-index: 9999; }
+        
+        .edit-icon { cursor: pointer; font-size: 1rem; opacity: 0.5; margin-left: 8px; transition: 0.2s; background: none; border: none; }
+        .edit-icon:hover { opacity: 1; transform: scale(1.1); }
     </style>
 </head>
 <body>
@@ -196,6 +208,10 @@
             <button class="btn-success" onclick="addCadet()">Зачислить</button>
         </div>
 
+        <div class="table-controls">
+            <input type="text" id="searchCadetInput" class="search-cadet" placeholder="🔍 Поиск по фамилии..." oninput="renderTable()">
+        </div>
+
         <div class="table-wrapper">
             <table class="grades-table">
                 <thead id="tableHeader"><tr id="tableHeadRow"></tr></thead>
@@ -225,17 +241,52 @@
     </div>
 </div>
 
-<div id="logsModal" class="modal-overlay">
-    <div class="card" style="padding: 30px; width: 90%; max-width: 800px; box-shadow: none;">
-        <h2 style="margin-bottom: 10px;">📜 Журнал действий системы</h2>
-        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 15px;">Здесь отображаются последние действия руководителей.</p>
+<div id="editCadetModal" class="modal-overlay">
+    <div class="card" style="padding: 30px; width: 90%; max-width: 400px; box-shadow: none;">
+        <h2 style="margin-bottom: 20px;">✏️ Редактирование курсанта</h2>
+        <input type="hidden" id="editCadetId">
+        <div style="font-size:0.8rem; color:var(--text-muted); font-weight:bold; margin-top:10px;">Фамилия</div>
+        <input type="text" id="editSurname">
+        <div style="font-size:0.8rem; color:var(--text-muted); font-weight:bold; margin-top:10px;">Имя</div>
+        <input type="text" id="editName">
+        <div style="font-size:0.8rem; color:var(--text-muted); font-weight:bold; margin-top:10px;">Отчество</div>
+        <input type="text" id="editPatronymic">
         
-        <div class="logs-container">
-            <table class="logs-table">
-                <thead><tr><th style="width: 130px;">Время</th><th style="width: 200px;">Пользователь</th><th>Действие</th></tr></thead>
-                <tbody id="logsTableBody"></tbody>
-            </table>
+        <button class="btn-primary" onclick="saveCadetEdit()">Сохранить</button>
+        <button class="logout-btn" onclick="document.getElementById('editCadetModal').style.display='none'" style="background:none; color:var(--text-muted);">Отмена</button>
+    </div>
+</div>
+
+<div id="logsModal" class="modal-overlay">
+    <div class="card" style="padding: 30px; width: 90%; max-width: 900px; box-shadow: none;">
+        <h2 style="margin-bottom: 15px;">Панель управления системой</h2>
+        
+        <div class="tabs">
+            <button class="tab-btn active" id="tabActionsBtn" onclick="switchLogTab('actions')">📜 Журнал действий</button>
+            <button class="tab-btn" id="tabUsersBtn" onclick="switchLogTab('users')">👥 База пользователей</button>
         </div>
+
+        <div id="actionsTab" class="logs-content active">
+            <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 15px;">Здесь отображаются последние действия руководителей.</p>
+            <div class="logs-container">
+                <table class="logs-table">
+                    <thead><tr><th style="width: 130px;">Время</th><th style="width: 200px;">Пользователь</th><th>Действие</th></tr></thead>
+                    <tbody id="logsTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="usersTab" class="logs-content">
+            <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 10px;">Поиск по зарегистрированным аккаунтам.</p>
+            <input type="text" id="userSearch" class="search-cadet" style="width: 100%; margin-bottom: 15px;" placeholder="Поиск по логину..." oninput="filterUsers()">
+            <div class="logs-container">
+                <table class="logs-table">
+                    <thead><tr><th>Логин</th><th>Имя (ФИО)</th><th>Пароль</th><th>Должность</th></tr></thead>
+                    <tbody id="usersTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+
         <button class="logout-btn" onclick="document.getElementById('logsModal').style.display='none'" style="background:none; color:var(--text-muted);">Закрыть</button>
     </div>
 </div>
@@ -261,6 +312,7 @@
 
     let currentLogin = null;
     let currentUser = null;
+    let currentEditingCadetOldName = ''; // Хранит старое имя для логов
 
     function showStatus(msg) {
         const el = document.getElementById('status');
@@ -381,28 +433,64 @@
         document.getElementById('adminModal').style.display = 'flex';
     }
 
+    // --- ЛОГИКА ВКЛАДОК И ЛОГОВ ---
     function openLogsModal() {
         document.getElementById('logsModal').style.display = 'flex';
+        switchLogTab('actions'); // по умолчанию открываем действия
         
+        // Загрузка логов
         database.ref('logs').orderByChild('timestamp').limitToLast(100).on('value', (snap) => {
             const tbody = document.getElementById('logsTableBody');
             tbody.innerHTML = '';
-            
             if (!snap.exists()) {
                 tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;">Записей пока нет</td></tr>';
                 return;
             }
-
             let logsArray = [];
             snap.forEach(child => { logsArray.push(child.val()); });
-            
             logsArray.reverse().forEach(log => {
-                tbody.innerHTML += `<tr>
-                    <td style="color:#64748b; font-size:0.8rem;">${log.time}</td>
-                    <td><b>${log.user}</b></td>
-                    <td>${log.action}</td>
+                tbody.innerHTML += `<tr><td style="color:#64748b; font-size:0.8rem;">${log.time}</td><td><b>${log.user}</b></td><td>${log.action}</td></tr>`;
+            });
+        });
+    }
+
+    function switchLogTab(tab) {
+        document.querySelectorAll('.logs-content').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+        
+        if(tab === 'actions') {
+            document.getElementById('actionsTab').classList.add('active');
+            document.getElementById('tabActionsBtn').classList.add('active');
+        } else {
+            document.getElementById('usersTab').classList.add('active');
+            document.getElementById('tabUsersBtn').classList.add('active');
+            loadAllUsers();
+        }
+    }
+
+    async function loadAllUsers() {
+        const snap = await database.ref('users').once('value');
+        const users = snap.val();
+        const tbody = document.getElementById('usersTableBody');
+        tbody.innerHTML = '';
+        
+        if(users) {
+            Object.keys(users).forEach(login => {
+                const user = users[login];
+                tbody.innerHTML += `<tr class="user-row" data-login="${login.toLowerCase()}">
+                    <td><b>${login}</b></td>
+                    <td>${user.name}</td>
+                    <td><code style="background:#f1f5f9; padding:4px 8px; border-radius:6px; color:#ef4444;">${user.pwd}</code></td>
+                    <td><span style="font-size:0.8rem; color:var(--primary); font-weight:bold;">${user.role}</span></td>
                 </tr>`;
             });
+        }
+    }
+
+    function filterUsers() {
+        const query = document.getElementById('userSearch').value.toLowerCase();
+        document.querySelectorAll('.user-row').forEach(row => {
+            row.style.display = row.dataset.login.includes(query) ? '' : 'none';
         });
     }
 
@@ -446,6 +534,40 @@
             showStatus('✅ Зачислен');
         }
     }
+
+    // --- РЕДАКТИРОВАНИЕ КУРСАНТА ---
+    function openEditCadet(id) {
+        const cadet = window.cadetsData.find(c => c.id === id);
+        if (!cadet) return;
+        
+        document.getElementById('editCadetId').value = cadet.id;
+        document.getElementById('editSurname').value = cadet.surname;
+        document.getElementById('editName').value = cadet.name;
+        document.getElementById('editPatronymic').value = cadet.patronymic;
+        
+        // Запоминаем старое имя для логов
+        currentEditingCadetOldName = `${cadet.surname} ${cadet.name} ${cadet.patronymic}`;
+        
+        document.getElementById('editCadetModal').style.display = 'flex';
+    }
+
+    async function saveCadetEdit() {
+        const id = document.getElementById('editCadetId').value;
+        const surname = document.getElementById('editSurname').value.trim();
+        const name = document.getElementById('editName').value.trim();
+        const pat = document.getElementById('editPatronymic').value.trim();
+
+        if (!surname || !name || !pat) return;
+
+        await database.ref(`cadets/${id}`).update({ surname, name, patronymic: pat });
+        
+        const newName = `${surname} ${name} ${pat}`;
+        await writeLog(`Изменил ФИО курсанта: ${currentEditingCadetOldName} ➔ ${newName}`);
+        
+        document.getElementById('editCadetModal').style.display = 'none';
+        showStatus('✅ Данные обновлены');
+    }
+    // -------------------------------
 
     window.delCadet = async (id) => { 
         if(confirm("Отчислить?")) {
@@ -497,24 +619,31 @@
             ${isReadOnly ? '' : '<th style="text-align:center;">Удалить</th>'}
         `;
 
-        const cadets = window.cadetsData || [];
+        let cadets = window.cadetsData || [];
+        
+        // --- ФИЛЬТРАЦИЯ ПО ПОИСКУ ---
+        const searchQuery = document.getElementById('searchCadetInput').value.toLowerCase().trim();
+        if (searchQuery) {
+            cadets = cadets.filter(c => c.surname.toLowerCase().includes(searchQuery));
+        }
+        
         if (!cadets.length) {
             const colSpan = isReadOnly ? 5 : 6;
-            return tbody.innerHTML = `<tr><td colspan="${colSpan}" style="text-align:center; padding:40px;">Нет курсантов</td></tr>`;
+            return tbody.innerHTML = `<tr><td colspan="${colSpan}" style="text-align:center; padding:40px;">Курсанты не найдены</td></tr>`;
         }
         
         tbody.innerHTML = '';
         cadets.forEach(cadet => {
-            // --- НОВАЯ ЛОГИКА ОТОБРАЖЕНИЯ ИМЕНИ ---
-            // Если длина Имени и Отчества 2 символа или меньше (например, "А." или "А")
             const isInitials = cadet.name.length <= 2 && cadet.patronymic.length <= 2;
             
+            // Кнопка редактирования только для тех, кто может удалять
+            const editBtnHtml = isReadOnly ? '' : `<button class="edit-icon" title="Редактировать ФИО" onclick="openEditCadet('${cadet.id}')">✏️</button>`;
+
             const nameDisplay = isInitials 
-                ? `<b>${cadet.surname} ${cadet.name} ${cadet.patronymic}</b>` 
-                : `<b>${cadet.surname}</b><br><span style="font-size:0.8rem;color:#64748b;">${cadet.name} ${cadet.patronymic}</span>`;
+                ? `<div style="display:flex; align-items:center;"><b>${cadet.surname} ${cadet.name} ${cadet.patronymic}</b> ${editBtnHtml}</div>` 
+                : `<div style="display:flex; align-items:center;"><b>${cadet.surname}</b> ${editBtnHtml}</div><div style="font-size:0.8rem;color:#64748b; margin-top:2px;">${cadet.name} ${cadet.patronymic}</div>`;
 
             let tr = `<tr><td>${nameDisplay}</td>`;
-            // --------------------------------------
 
             let allMarks = [];
             

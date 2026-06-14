@@ -15,7 +15,7 @@
             --success: #10b981; --danger: #ef4444;
             --text-main: #1e293b; --text-muted: #64748b;
             --border-color: rgba(226, 232, 240, 0.6);
-            --card-bg: rgba(255, 255, 255, 0.85); /* Сделали карточки чуть прозрачнее для эффекта стекла */
+            --card-bg: rgba(255, 255, 255, 0.85);
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -30,7 +30,7 @@
             background: #0f172a;
         }
 
-        /* --- 1. НОВЫЙ АНИМИРОВАННЫЙ 3D ФОН --- */
+        /* Анимированный 3D фон */
         .bg-blobs { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: -1; overflow: hidden; pointer-events: none; }
         .blob { position: absolute; border-radius: 50%; filter: blur(90px); opacity: 0.6; animation: float 20s infinite ease-in-out alternate; }
         .blob-1 { width: 50vw; height: 50vw; background: #4f46e5; top: -10%; left: -10%; }
@@ -51,7 +51,6 @@
             to { opacity: 1; transform: translateY(0); }
         }
 
-        /* Glassmorphism для карточек */
         .card {
             background: var(--card-bg);
             backdrop-filter: blur(25px);
@@ -62,7 +61,7 @@
             animation: fadeUp 0.5s ease forwards;
         }
 
-        /* Авторизация и Ожидание */
+        /* Авторизация */
         .auth-box { padding: 50px 40px; max-width: 440px; margin: 80px auto; text-align: center; }
         h1 { font-size: 2rem; font-weight: 800; background: linear-gradient(to right, #1e293b, #4f46e5); -webkit-background-clip: text; color: transparent; margin-bottom: 8px; }
         .subtitle { color: var(--text-muted); font-size: 1rem; font-weight: 500; margin-bottom: 30px; }
@@ -82,7 +81,7 @@
         .btn-success { background: linear-gradient(135deg, var(--success), #34d399); color: white; padding: 16px 28px; border-radius: 16px; font-weight: 600; height: 56px; box-shadow: 0 10px 20px -10px var(--success); }
         
         .logout-btn { background: rgba(239, 68, 68, 0.1); color: var(--danger); padding: 14px; border-radius: 14px; font-weight: 600; width: 100%; margin-top: 15px; }
-        .admin-gear-btn { background: #f1f5f9; color: var(--text-main); border: 1px solid #cbd5e1; padding: 12px 24px; border-radius: 14px; font-weight: 600; width: 100%; margin-top: 15px; }
+        .admin-gear-btn { background: #f1f5f9; color: var(--text-main); border: 1px solid #cbd5e1; padding: 12px 24px; border-radius: 14px; font-weight: 600; width: 100%; margin-top: 10px; }
 
         .error { color: var(--danger); margin-top: 12px; font-size: 0.9rem; font-weight: 600; min-height: 20px; }
         .link-text { color: var(--primary); font-weight: 600; cursor: pointer; margin-top: 20px; display: inline-block; font-size: 0.95rem; }
@@ -112,12 +111,16 @@
         .action-btn { width: 32px; height: 32px; border-radius: 8px; background: white; border: 1px solid #e2e8f0; font-weight: bold; cursor: pointer; }
         .avg-pill { background: linear-gradient(135deg, #10b981, #059669); color: white; padding: 6px 14px; border-radius: 20px; font-weight: bold; }
 
-        /* Инструкция */
         .instruction-text { font-size: 0.75rem; color: var(--text-muted); margin-top: 25px; line-height: 1.5; font-weight: 500; }
         
-        /* Модалка админа */
+        /* Модалки и Логи */
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(8px); display: none; align-items: center; justify-content: center; z-index: 1000; }
         
+        .logs-container { max-height: 400px; overflow-y: auto; margin-top: 15px; border: 1px solid #e2e8f0; border-radius: 12px; background: white; }
+        .logs-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+        .logs-table th { background: #f1f5f9; position: sticky; top: 0; padding: 12px; text-align: left; color: #64748b; font-weight: 700; z-index: 10; }
+        .logs-table td { padding: 12px; border-bottom: 1px solid #e2e8f0; }
+
         .status { position: fixed; bottom: 20px; right: 20px; background: rgba(0,0,0,0.8); color: white; padding: 10px 20px; border-radius: 30px; font-size: 0.9rem; display: none; z-index: 9999; }
     </style>
 </head>
@@ -179,6 +182,8 @@
                     <hr style="border:none; border-top: 1px solid var(--border-color); margin: 10px 0;">
                     
                     <button id="adminGearBtn" class="admin-gear-btn" style="display: none;" onclick="openAdminModal()">⚙️ Выдать должность</button>
+                    <button id="logsBtn" class="admin-gear-btn" style="display: none;" onclick="openLogsModal()">📜 Журнал действий</button>
+                    
                     <button class="logout-btn" onclick="logout()">🚪 Выйти</button>
                 </div>
             </div>
@@ -193,10 +198,7 @@
 
         <div class="table-wrapper">
             <table class="grades-table">
-                <thead id="tableHeader">
-                    <tr id="tableHeadRow">
-                        </tr>
-                </thead>
+                <thead id="tableHeader"><tr id="tableHeadRow"></tr></thead>
                 <tbody id="tableBody"></tbody>
             </table>
         </div>
@@ -209,7 +211,8 @@
         <input type="text" id="targetLogin" placeholder="Логин сотрудника">
         <select id="targetRole" style="margin-bottom: 20px;">
             <option value="Без должности">Без должности</option>
-            <option value="Курсант">Курсант</option> <option value="Заведующий">Заведующий</option>
+            <option value="Курсант">Курсант</option>
+            <option value="Заведующий">Заведующий</option>
             <option value="Секретарь">Секретарь</option>
             <option value="Куратор">Куратор</option>
             <option value="Декан">Декан</option>
@@ -222,10 +225,24 @@
     </div>
 </div>
 
+<div id="logsModal" class="modal-overlay">
+    <div class="card" style="padding: 30px; width: 90%; max-width: 800px; box-shadow: none;">
+        <h2 style="margin-bottom: 10px;">📜 Журнал действий системы</h2>
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 15px;">Здесь отображаются последние действия руководителей.</p>
+        
+        <div class="logs-container">
+            <table class="logs-table">
+                <thead><tr><th style="width: 130px;">Время</th><th style="width: 200px;">Пользователь</th><th>Действие</th></tr></thead>
+                <tbody id="logsTableBody"></tbody>
+            </table>
+        </div>
+        <button class="logout-btn" onclick="document.getElementById('logsModal').style.display='none'" style="background:none; color:var(--text-muted);">Закрыть</button>
+    </div>
+</div>
+
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
 <script>
-    // Подключение Firebase
     const firebaseConfig = {
         apiKey: "AIzaSyArg3bVR6kGDU6XoM74ljpLfBDQ-lC9m4Y",
         authDomain: "diary-6f282.firebaseapp.com",
@@ -240,7 +257,7 @@
 
     const SUBJECTS = ["Военно-тактическая", "Русский язык", "Юридический"];
     const ADMIN_ROLES = ["Куратор", "Декан", "Проректор", "Ректор", "Начальник академии"];
-    const PROTECTED_LOGINS = ['kyz', 'per'];
+    const PROTECTED_LOGINS = ['kyz', 'per', 'teacher'];
 
     let currentLogin = null;
     let currentUser = null;
@@ -251,6 +268,25 @@
         setTimeout(() => el.style.display = 'none', 3000);
     }
 
+    async function writeLog(actionText) {
+        const id = Date.now().toString();
+        const timeStr = new Date().toLocaleString('ru-RU');
+        const userStr = currentUser ? `${currentUser.name} (${currentLogin})` : 'Система';
+        
+        await database.ref(`logs/${id}`).set({
+            time: timeStr,
+            user: userStr,
+            action: actionText,
+            timestamp: firebase.database.ServerValue.TIMESTAMP
+        });
+    }
+
+    function getCadetName(id) {
+        if (!window.cadetsData) return `ID: ${id}`;
+        const cadet = window.cadetsData.find(c => c.id === id);
+        return cadet ? `${cadet.surname} ${cadet.name}` : `ID: ${id}`;
+    }
+
     function toggleAuth(mode) {
         document.getElementById('loginError').innerText = '';
         document.getElementById('regError').innerText = '';
@@ -258,7 +294,6 @@
         document.getElementById('regView').style.display = mode === 'reg' ? 'block' : 'none';
     }
 
-    // --- ОТСЛЕЖИВАНИЕ ПРАВ И ОТОБРАЖЕНИЕ ---
     function listenUserAccess(login) {
         database.ref(`users/${login}`).on('value', (snapshot) => {
             const user = snapshot.val();
@@ -275,7 +310,7 @@
                 document.getElementById('mainBlock').style.display = 'block';
                 
                 setupProfile();
-                listenCadets(); // Запускаем сбор оценок
+                listenCadets(); 
             }
         });
     }
@@ -283,6 +318,12 @@
     async function loginUser() {
         const login = document.getElementById('loginInput').value.trim();
         const pwd = document.getElementById('passwordInput').value.trim();
+        
+        if (login.toLowerCase() === 'teacher') {
+            document.getElementById('loginError').innerText = 'Вход по общим логинам отключен. Используйте личный аккаунт.';
+            return;
+        }
+
         if(!login || !pwd) return;
 
         const snap = await database.ref(`users/${login}`).once('value');
@@ -309,6 +350,8 @@
         if (snap.exists()) return err.innerText = 'Логин уже занят';
 
         await database.ref(`users/${login}`).set({ name, pwd, role: 'Без должности' });
+        await writeLog(`Зарегистрирован новый аккаунт: ${name} (логин: ${login})`);
+        
         showStatus('✅ Аккаунт создан');
         toggleAuth('login');
         document.getElementById('loginInput').value = login;
@@ -321,7 +364,9 @@
         document.getElementById('avatarBtn').innerText = currentUser.name.substring(0, 2).toUpperCase();
         
         const canAssign = ADMIN_ROLES.includes(currentUser.role) || currentLogin === 'kyz';
+        
         document.getElementById('adminGearBtn').style.display = canAssign ? 'block' : 'none';
+        document.getElementById('logsBtn').style.display = canAssign ? 'block' : 'none';
     }
 
     document.getElementById('avatarBtn').onclick = (e) => {
@@ -336,6 +381,31 @@
         document.getElementById('adminModal').style.display = 'flex';
     }
 
+    function openLogsModal() {
+        document.getElementById('logsModal').style.display = 'flex';
+        
+        database.ref('logs').orderByChild('timestamp').limitToLast(100).on('value', (snap) => {
+            const tbody = document.getElementById('logsTableBody');
+            tbody.innerHTML = '';
+            
+            if (!snap.exists()) {
+                tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;">Записей пока нет</td></tr>';
+                return;
+            }
+
+            let logsArray = [];
+            snap.forEach(child => { logsArray.push(child.val()); });
+            
+            logsArray.reverse().forEach(log => {
+                tbody.innerHTML += `<tr>
+                    <td style="color:#64748b; font-size:0.8rem;">${log.time}</td>
+                    <td><b>${log.user}</b></td>
+                    <td>${log.action}</td>
+                </tr>`;
+            });
+        });
+    }
+
     async function assignRole() {
         const targetLogin = document.getElementById('targetLogin').value.trim();
         const targetRole = document.getElementById('targetRole').value;
@@ -344,6 +414,8 @@
         const snap = await database.ref(`users/${targetLogin}`).once('value');
         if (snap.exists()) {
             await database.ref(`users/${targetLogin}/role`).set(targetRole);
+            await writeLog(`Выдал должность «${targetRole}» пользователю ${targetLogin}`);
+            
             document.getElementById('adminModal').style.display = 'none';
             showStatus('⚙️ Должность обновлена');
         } else {
@@ -353,7 +425,6 @@
 
     function logout() { location.reload(); }
 
-    // --- ЖУРНАЛ: РЕЖИМ ЧТЕНИЯ И РЕДАКТИРОВАНИЯ ---
     function listenCadets() {
         database.ref('cadets').on('value', (snap) => {
             window.cadetsData = snap.val() ? Object.values(snap.val()) : [];
@@ -362,32 +433,61 @@
     }
 
     async function addCadet() {
-        if (currentUser.role === 'Курсант') return; // Защита
+        if (currentUser.role === 'Курсант') return; 
         const surname = document.getElementById('newSurname').value.trim();
         const name = document.getElementById('newName').value.trim();
         const pat = document.getElementById('newPatronymic').value.trim();
         if (surname && name && pat) {
             const id = Date.now().toString();
             await database.ref(`cadets/${id}`).set({ id, surname, name, patronymic: pat });
+            await writeLog(`Зачислил курсанта: ${surname} ${name} ${pat}`);
+            
             document.getElementById('newSurname').value = ''; document.getElementById('newName').value = ''; document.getElementById('newPatronymic').value = '';
             showStatus('✅ Зачислен');
         }
     }
 
-    window.delCadet = (id) => { if(confirm("Отчислить?")) database.ref(`cadets/${id}`).remove(); };
-    window.addMark = async (id, subj, mark) => { const r=database.ref(`cadets/${id}/grades/${subj}`); const s=await r.once('value'); const m=s.val()||[]; m.push(mark); r.set(m); };
-    window.delMark = async (id, subj, i) => { const r=database.ref(`cadets/${id}/grades/${subj}`); const s=await r.once('value'); const m=s.val()||[]; if(m[i]){ m.splice(i,1); r.set(m); }};
+    window.delCadet = async (id) => { 
+        if(confirm("Отчислить?")) {
+            const cName = getCadetName(id);
+            await database.ref(`cadets/${id}`).remove();
+            await writeLog(`Отчислил курсанта: ${cName}`);
+        }
+    };
+    
+    window.addMark = async (id, subj, mark) => { 
+        const r=database.ref(`cadets/${id}/grades/${subj}`); 
+        const s=await r.once('value'); 
+        const m=s.val()||[]; 
+        m.push(mark); 
+        await r.set(m); 
+        
+        const cName = getCadetName(id);
+        await writeLog(`Поставил оценку «${mark}» по предмету «${subj}» курсанту: ${cName}`);
+    };
+    
+    window.delMark = async (id, subj, i) => { 
+        const r=database.ref(`cadets/${id}/grades/${subj}`); 
+        const s=await r.once('value'); 
+        const m=s.val()||[]; 
+        if(m[i]){ 
+            const deletedMark = m[i];
+            m.splice(i,1); 
+            await r.set(m); 
+            
+            const cName = getCadetName(id);
+            await writeLog(`Удалил оценку «${deletedMark}» по предмету «${subj}» у курсанта: ${cName}`);
+        }
+    };
 
     function getMarkClass(m) { return m==='5'?'grade-5':m==='4'?'grade-4':m==='3'?'grade-3':m==='2'?'grade-2':m==='н'?'grade-absent':m==='о'?'grade-task':''; }
 
     function renderTable() {
         const tbody = document.getElementById('tableBody');
-        const isReadOnly = (currentUser.role === 'Курсант'); // Проверяем, курсант ли это
+        const isReadOnly = (currentUser.role === 'Курсант');
 
-        // Если Курсант -> прячем форму добавления
         document.getElementById('addCadetForm').style.display = isReadOnly ? 'none' : 'grid';
 
-        // Генерируем шапку (скрываем колонку "Удалить" для курсанта)
         document.getElementById('tableHeadRow').innerHTML = `
             <th>Курсант</th>
             <th>Военно-тактическая</th>
@@ -405,41 +505,43 @@
         
         tbody.innerHTML = '';
         cadets.forEach(cadet => {
-            let tr = `<tr><td><b>${cadet.surname} ${cadet.name}</b><br><span style="font-size:0.8rem;color:#64748b;">${cadet.patronymic}</span></td>`;
+            // --- НОВАЯ ЛОГИКА ОТОБРАЖЕНИЯ ИМЕНИ ---
+            // Если длина Имени и Отчества 2 символа или меньше (например, "А." или "А")
+            const isInitials = cadet.name.length <= 2 && cadet.patronymic.length <= 2;
+            
+            const nameDisplay = isInitials 
+                ? `<b>${cadet.surname} ${cadet.name} ${cadet.patronymic}</b>` 
+                : `<b>${cadet.surname}</b><br><span style="font-size:0.8rem;color:#64748b;">${cadet.name} ${cadet.patronymic}</span>`;
+
+            let tr = `<tr><td>${nameDisplay}</td>`;
+            // --------------------------------------
+
             let allMarks = [];
             
             SUBJECTS.forEach(subj => {
                 const marks = (cadet.grades || {})[subj] || [];
                 allMarks.push(...marks);
                 
-                // Рендер оценок. Если режим чтения - отключаем onclick и убираем курсор
                 let marksHtml = marks.map((m, i) => {
                     const action = isReadOnly ? '' : `onclick="delMark('${cadet.id}','${subj}',${i})"`;
                     const cursor = isReadOnly ? 'cursor: default;' : 'cursor: pointer;';
-                    // Убираем hover-эффект для курсантов (чтобы оценка не дергалась при наведении)
                     const transformStyle = isReadOnly ? 'transform: none !important;' : '';
                     return `<span class="grade-badge ${getMarkClass(m)}" ${action} style="${cursor} ${transformStyle}">${m}</span>`;
                 }).join('');
                 
-                // Скрываем элементы управления для курсантов
                 let controlHtml = isReadOnly ? '' : `
                     <div class="grade-control">
                         <select id="sel_${cadet.id}_${subj}" style="width:auto; padding:4px; margin:0; border:1px solid #e2e8f0; border-radius:8px;"><option>5</option><option>4</option><option>3</option><option>2</option><option>н</option><option>о</option></select>
                         <button class="action-btn" onclick="addMark('${cadet.id}','${subj}', document.getElementById('sel_${cadet.id}_${subj}').value)">+</button>
                     </div>`;
 
-                tr += `<td>
-                    <div class="grades-list">${marksHtml}</div>
-                    ${controlHtml}
-                </td>`;
+                tr += `<td><div class="grades-list">${marksHtml}</div>${controlHtml}</td>`;
             });
 
-            // Средний балл
             const nums = allMarks.map(m => parseInt(m)).filter(n => !isNaN(n));
             const avg = nums.length ? (nums.reduce((a,b)=>a+b,0)/nums.length).toFixed(1) : "—";
             tr += `<td style="text-align:center"><span class="avg-pill" style="${avg!=='—'&&avg<3.5?'background:linear-gradient(135deg, #f59e0b, #d97706);':''} ${avg!=='—'&&avg<2.5?'background:linear-gradient(135deg, #ef4444, #dc2626);':''}">${avg}</span></td>`;
             
-            // Кнопка удаления (только для администрации)
             if (!isReadOnly) {
                 tr += `<td style="text-align:center"><button class="action-btn" style="color:red; border:none; font-size:1.2rem;" onclick="delCadet('${cadet.id}')">🗑️</button></td>`;
             }

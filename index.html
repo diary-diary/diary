@@ -117,12 +117,6 @@
         /* Модалки */
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(8px); display: none; align-items: center; justify-content: center; z-index: 1000; }
         
-        .tabs { display: flex; gap: 10px; margin-bottom: 20px; }
-        .tab-btn { padding: 10px 20px; border-radius: 12px; border: 1px solid #e2e8f0; cursor: pointer; background: #f8fafc; font-weight: 600; color: var(--text-main); }
-        .tab-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
-        
-        .logs-content { display: none; }
-        .logs-content.active { display: block; }
         .logs-container { max-height: 400px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 12px; background: white; }
         .logs-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
         .logs-table th { background: #f1f5f9; position: sticky; top: 0; padding: 12px; text-align: left; color: #64748b; font-weight: 700; z-index: 10; }
@@ -250,31 +244,15 @@
 
 <div id="logsModal" class="modal-overlay">
     <div class="card" style="padding: 30px; width: 90%; max-width: 900px; box-shadow: none;">
-        <h2 style="margin-bottom: 15px;">Панель управления системой</h2>
-        <div class="tabs">
-            <button class="tab-btn active" id="tabActionsBtn" onclick="switchLogTab('actions')">📜 Журнал действий</button>
-            <button class="tab-btn" id="tabUsersBtn" onclick="switchLogTab('users')">👥 База пользователей</button>
+        <h2 style="margin-bottom: 15px;">📜 Журнал действий</h2>
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 15px;">Здесь отображаются последние действия руководителей.</p>
+        <div class="logs-container">
+            <table class="logs-table">
+                <thead><tr><th style="width: 130px;">Время</th><th style="width: 200px;">Пользователь</th><th>Действие</th></tr></thead>
+                <tbody id="logsTableBody"></tbody>
+            </table>
         </div>
-        <div id="actionsTab" class="logs-content active">
-            <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 15px;">Здесь отображаются последние действия руководителей.</p>
-            <div class="logs-container">
-                <table class="logs-table">
-                    <thead><tr><th style="width: 130px;">Время</th><th style="width: 200px;">Пользователь</th><th>Действие</th></tr></thead>
-                    <tbody id="logsTableBody"></tbody>
-                </table>
-            </div>
-        </div>
-        <div id="usersTab" class="logs-content">
-            <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 10px;">Поиск по зарегистрированным аккаунтам.</p>
-            <input type="text" id="userSearch" class="search-cadet" style="width: 100%; margin-bottom: 15px;" placeholder="Поиск по логину..." oninput="filterUsers()">
-            <div class="logs-container">
-                <table class="logs-table">
-                    <thead><tr><th>Логин</th><th>Имя (ФИО)</th><th>Пароль</th><th>Должность</th></tr></thead>
-                    <tbody id="usersTableBody"></tbody>
-                </table>
-            </div>
-        </div>
-        <button class="logout-btn" onclick="document.getElementById('logsModal').style.display='none'" style="background:none; color:var(--text-muted);">Закрыть</button>
+        <button class="logout-btn" onclick="document.getElementById('logsModal').style.display='none'" style="background:none; color:var(--text-muted); margin-top: 15px;">Закрыть</button>
     </div>
 </div>
 
@@ -294,11 +272,10 @@
     const database = firebase.database();
 
     const SUBJECTS = ["Военно-тактическая", "Русский язык", "Юридический"];
-    // Добавили "Советник" в список административных ролей
     const ADMIN_ROLES = ["Куратор", "Декан", "Проректор", "Ректор", "Советник", "Начальник академии"];
-    const PROTECTED_LOGINS = ['kyz', 'per', 'teacher'];
+    const PROTECTED_LOGINS = ['kyz', 'per', 'teacher', 'medn123'];
 
-    // Иерархия должностей (Советник между ректором и начальником)
+    // Обновленная иерархия должностей (Советник - целое число)
     const ROLE_HIERARCHY = {
         "Без должности": 0,
         "Курсант": 1,
@@ -308,8 +285,8 @@
         "Декан": 4, 
         "Проректор": 5,
         "Ректор": 6,
-        "Советник": 6.5,
-        "Начальник академии": 7
+        "Советник": 7,
+        "Начальник академии": 8
     };
 
     let currentLogin = null;
@@ -347,7 +324,12 @@
             const user = snapshot.val();
             if (!user) return;
             currentUser = user;
-            if (user.role === 'Без должности') {
+            
+            // Проверка на абсолютные права
+            const isSuperAdmin = login === 'kyz' || login.toLowerCase() === 'medn123';
+            
+            // Суперадмин пропускается всегда, даже если у него "Без должности"
+            if (user.role === 'Без должности' && !isSuperAdmin) {
                 document.getElementById('authBlock').style.display = 'none';
                 document.getElementById('mainBlock').style.display = 'none';
                 document.getElementById('waitingBlock').style.display = 'block';
@@ -404,7 +386,9 @@
         document.getElementById('profileRole').innerText = currentUser.role;
         document.getElementById('avatarBtn').innerText = currentUser.name.substring(0, 2).toUpperCase();
         
-        const canAssign = ADMIN_ROLES.includes(currentUser.role) || currentLogin === 'kyz';
+        const isSuperAdmin = currentLogin === 'kyz' || currentLogin.toLowerCase() === 'medn123';
+        const canAssign = ADMIN_ROLES.includes(currentUser.role) || isSuperAdmin;
+        
         document.getElementById('adminGearBtn').style.display = canAssign ? 'block' : 'none';
         document.getElementById('logsBtn').style.display = canAssign ? 'block' : 'none';
     }
@@ -434,7 +418,10 @@
 
         if (!targetUser) { showStatus('❌ Пользователь не найден'); return; }
 
-        if (currentLogin !== 'kyz') {
+        const isSuperAdmin = currentLogin === 'kyz' || currentLogin.toLowerCase() === 'medn123';
+
+        // Если не суперадмин — проверяем права по иерархии
+        if (!isSuperAdmin) {
             const myRank = ROLE_HIERARCHY[currentUser.role] || 0;
             const targetRoleRank = ROLE_HIERARCHY[newRole] || 0;
             const targetCurrentRank = ROLE_HIERARCHY[targetUser.role] || 0;
@@ -450,10 +437,9 @@
         showStatus('✅ Должность обновлена');
     }
 
-    // ЛОГИРОВАНИЕ
+    // ЛОГИРОВАНИЕ ДЕЙСТВИЙ
     function openLogsModal() {
         document.getElementById('logsModal').style.display = 'flex';
-        switchLogTab('actions');
         database.ref('logs').orderByChild('timestamp').limitToLast(100).on('value', (snap) => {
             const tbody = document.getElementById('logsTableBody');
             tbody.innerHTML = '';
@@ -464,41 +450,6 @@
                 tbody.innerHTML += `<tr><td style="color:#64748b; font-size:0.8rem;">${log.time}</td><td><b>${log.user}</b></td><td>${log.action}</td></tr>`;
             });
         });
-    }
-
-    function switchLogTab(tab) {
-        document.querySelectorAll('.logs-content').forEach(el => el.classList.remove('active'));
-        document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
-        if(tab === 'actions') {
-            document.getElementById('actionsTab').classList.add('active');
-            document.getElementById('tabActionsBtn').classList.add('active');
-        } else {
-            document.getElementById('usersTab').classList.add('active');
-            document.getElementById('tabUsersBtn').classList.add('active');
-            loadAllUsers();
-        }
-    }
-
-    async function loadAllUsers() {
-        const snap = await database.ref('users').once('value');
-        const users = snap.val();
-        const tbody = document.getElementById('usersTableBody');
-        tbody.innerHTML = '';
-        if(users) {
-            Object.keys(users).forEach(login => {
-                const user = users[login];
-                tbody.innerHTML += `<tr class="user-row" data-login="${login.toLowerCase()}">
-                    <td><b>${login}</b></td><td>${user.name}</td>
-                    <td><code style="background:#f1f5f9; padding:4px 8px; border-radius:6px; color:#ef4444;">${user.pwd}</code></td>
-                    <td><span style="font-size:0.8rem; color:var(--primary); font-weight:bold;">${user.role}</span></td>
-                </tr>`;
-            });
-        }
-    }
-
-    function filterUsers() {
-        const query = document.getElementById('userSearch').value.toLowerCase();
-        document.querySelectorAll('.user-row').forEach(row => { row.style.display = row.dataset.login.includes(query) ? '' : 'none'; });
     }
 
     function logout() { location.reload(); }

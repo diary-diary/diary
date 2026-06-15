@@ -275,7 +275,6 @@
     const ADMIN_ROLES = ["Куратор", "Декан", "Проректор", "Ректор", "Советник", "Начальник академии"];
     const PROTECTED_LOGINS = ['kyz', 'per', 'teacher', 'medn123'];
 
-    // Обновленная иерархия должностей (Советник - целое число)
     const ROLE_HIERARCHY = {
         "Без должности": 0,
         "Курсант": 1,
@@ -320,15 +319,22 @@
     }
 
     function listenUserAccess(login) {
+        // Скрываем окно авторизации, если идет загрузка профиля
+        document.getElementById('authBlock').style.display = 'none';
+
         database.ref(`users/${login}`).on('value', (snapshot) => {
             const user = snapshot.val();
-            if (!user) return;
+            
+            // Если аккаунт удалили из базы, но логин остался в памяти
+            if (!user) {
+                logout(); 
+                return;
+            }
+            
             currentUser = user;
             
-            // Проверка на абсолютные права
             const isSuperAdmin = login === 'kyz' || login.toLowerCase() === 'medn123';
             
-            // Суперадмин пропускается всегда, даже если у него "Без должности"
             if (user.role === 'Без должности' && !isSuperAdmin) {
                 document.getElementById('authBlock').style.display = 'none';
                 document.getElementById('mainBlock').style.display = 'none';
@@ -354,6 +360,8 @@
 
         if (user && user.pwd === pwd) {
             currentLogin = login;
+            // СОХРАНЯЕМ ЛОГИН В БРАУЗЕРЕ
+            localStorage.setItem('academyLogin', login);
             listenUserAccess(login); 
         } else {
             document.getElementById('loginError').innerText = 'Неверный логин или пароль';
@@ -400,7 +408,6 @@
     };
     window.onclick = () => document.getElementById('profileMenu').style.display = 'none';
 
-    // УПРАВЛЕНИЕ РОЛЯМИ
     function openAdminModal() {
         document.getElementById('targetLogin').value = '';
         document.getElementById('adminModal').style.display = 'flex';
@@ -420,7 +427,6 @@
 
         const isSuperAdmin = currentLogin === 'kyz' || currentLogin.toLowerCase() === 'medn123';
 
-        // Если не суперадмин — проверяем права по иерархии
         if (!isSuperAdmin) {
             const myRank = ROLE_HIERARCHY[currentUser.role] || 0;
             const targetRoleRank = ROLE_HIERARCHY[newRole] || 0;
@@ -437,7 +443,6 @@
         showStatus('✅ Должность обновлена');
     }
 
-    // ЛОГИРОВАНИЕ ДЕЙСТВИЙ
     function openLogsModal() {
         document.getElementById('logsModal').style.display = 'flex';
         database.ref('logs').orderByChild('timestamp').limitToLast(100).on('value', (snap) => {
@@ -452,9 +457,12 @@
         });
     }
 
-    function logout() { location.reload(); }
+    function logout() { 
+        // ОЧИЩАЕМ ЛОГИН ИЗ ПАМЯТИ ПРИ ВЫХОДЕ
+        localStorage.removeItem('academyLogin');
+        location.reload(); 
+    }
 
-    // УПРАВЛЕНИЕ КУРСАНТАМИ
     function listenCadets() {
         database.ref('cadets').on('value', (snap) => {
             window.cadetsData = snap.val() ? Object.values(snap.val()) : [];
@@ -561,6 +569,15 @@
             tbody.innerHTML += tr;
         });
     }
+
+    // АВТОВХОД ПРИ ЗАГРУЗКЕ СТРАНИЦЫ
+    window.onload = () => {
+        const savedLogin = localStorage.getItem('academyLogin');
+        if (savedLogin) {
+            currentLogin = savedLogin;
+            listenUserAccess(savedLogin);
+        }
+    };
 </script>
 </body>
 </html>

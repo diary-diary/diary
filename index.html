@@ -30,7 +30,7 @@
             background: #0f172a;
         }
 
-        /* Анимированный 3D фон */
+        /* Анимированный фон */
         .bg-blobs { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: -1; overflow: hidden; pointer-events: none; }
         .blob { position: absolute; border-radius: 50%; filter: blur(90px); opacity: 0.6; animation: float 20s infinite ease-in-out alternate; }
         .blob-1 { width: 50vw; height: 50vw; background: #4f46e5; top: -10%; left: -10%; }
@@ -54,14 +54,12 @@
         .card {
             background: var(--card-bg);
             backdrop-filter: blur(25px);
-            -webkit-backdrop-filter: blur(25px);
             border: 1px solid rgba(255, 255, 255, 0.4);
             border-radius: 32px;
             box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(255,255,255,0.3);
             animation: fadeUp 0.5s ease forwards;
         }
 
-        /* Авторизация */
         .auth-box { padding: 50px 40px; max-width: 440px; margin: 80px auto; text-align: center; }
         h1 { font-size: 2rem; font-weight: 800; background: linear-gradient(to right, #1e293b, #4f46e5); -webkit-background-clip: text; color: transparent; margin-bottom: 8px; }
         .subtitle { color: var(--text-muted); font-size: 1rem; font-weight: 500; margin-bottom: 30px; }
@@ -116,7 +114,7 @@
 
         .instruction-text { font-size: 0.75rem; color: var(--text-muted); margin-top: 25px; line-height: 1.5; font-weight: 500; }
         
-        /* Модалки и Логи */
+        /* Модалки */
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(8px); display: none; align-items: center; justify-content: center; z-index: 1000; }
         
         .tabs { display: flex; gap: 10px; margin-bottom: 20px; }
@@ -174,28 +172,21 @@
         <div style="font-size: 4rem; margin-bottom: 10px;">⏳</div>
         <h2 style="color: #1e293b; margin-bottom: 10px;">Ожидание доступа</h2>
         <div style="color: #64748b; font-weight: 500; font-size: 0.95rem;">Ваша должность еще не назначена.</div>
-        
         <button class="logout-btn" onclick="logout()" style="margin-top: 30px;">🚪 Выйти из аккаунта</button>
-        
-        <div class="instruction-text">
-            Вы должны отправить свой логин куратору факультета (или вышестоящему руководству), чтобы получить должность и доступ к журналу.
-        </div>
+        <div class="instruction-text">Вы должны отправить свой логин куратору факультета (или вышестоящему руководству), чтобы получить должность и доступ к журналу.</div>
     </div>
 
     <div id="mainBlock" class="card main-panel" style="display: none;">
         <div class="panel-header">
             <h1 style="margin:0; font-size:1.8rem;">📚 Журнал</h1>
-            
             <div class="profile-section">
                 <div class="avatar" id="avatarBtn">?</div>
                 <div class="profile-dropdown" id="profileMenu">
                     <div id="profileName" style="font-weight: 800; color: #1e293b; font-size: 1.1rem;">Имя</div>
                     <div id="profileRole" style="font-size: 0.85rem; color: var(--primary); font-weight: 700; margin-bottom: 15px;">Должность</div>
                     <hr style="border:none; border-top: 1px solid var(--border-color); margin: 10px 0;">
-                    
                     <button id="adminGearBtn" class="admin-gear-btn" style="display: none;" onclick="openAdminModal()">⚙️ Выдать должность</button>
                     <button id="logsBtn" class="admin-gear-btn" style="display: none;" onclick="openLogsModal()">📜 Журнал действий</button>
-                    
                     <button class="logout-btn" onclick="logout()">🚪 Выйти</button>
                 </div>
             </div>
@@ -234,6 +225,7 @@
             <option value="Декан">Декан</option>
             <option value="Проректор">Проректор</option>
             <option value="Ректор">Ректор</option>
+            <option value="Советник">Советник</option>
             <option value="Начальник академии">Начальник академии</option>
         </select>
         <button class="btn-primary" onclick="assignRole()">Назначить</button>
@@ -251,7 +243,6 @@
         <input type="text" id="editName">
         <div style="font-size:0.8rem; color:var(--text-muted); font-weight:bold; margin-top:10px;">Отчество</div>
         <input type="text" id="editPatronymic">
-        
         <button class="btn-primary" onclick="saveCadetEdit()">Сохранить</button>
         <button class="logout-btn" onclick="document.getElementById('editCadetModal').style.display='none'" style="background:none; color:var(--text-muted);">Отмена</button>
     </div>
@@ -260,12 +251,10 @@
 <div id="logsModal" class="modal-overlay">
     <div class="card" style="padding: 30px; width: 90%; max-width: 900px; box-shadow: none;">
         <h2 style="margin-bottom: 15px;">Панель управления системой</h2>
-        
         <div class="tabs">
             <button class="tab-btn active" id="tabActionsBtn" onclick="switchLogTab('actions')">📜 Журнал действий</button>
             <button class="tab-btn" id="tabUsersBtn" onclick="switchLogTab('users')">👥 База пользователей</button>
         </div>
-
         <div id="actionsTab" class="logs-content active">
             <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 15px;">Здесь отображаются последние действия руководителей.</p>
             <div class="logs-container">
@@ -275,7 +264,6 @@
                 </table>
             </div>
         </div>
-
         <div id="usersTab" class="logs-content">
             <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 10px;">Поиск по зарегистрированным аккаунтам.</p>
             <input type="text" id="userSearch" class="search-cadet" style="width: 100%; margin-bottom: 15px;" placeholder="Поиск по логину..." oninput="filterUsers()">
@@ -286,7 +274,6 @@
                 </table>
             </div>
         </div>
-
         <button class="logout-btn" onclick="document.getElementById('logsModal').style.display='none'" style="background:none; color:var(--text-muted);">Закрыть</button>
     </div>
 </div>
@@ -307,12 +294,27 @@
     const database = firebase.database();
 
     const SUBJECTS = ["Военно-тактическая", "Русский язык", "Юридический"];
-    const ADMIN_ROLES = ["Куратор", "Декан", "Проректор", "Ректор", "Начальник академии"];
+    // Добавили "Советник" в список административных ролей
+    const ADMIN_ROLES = ["Куратор", "Декан", "Проректор", "Ректор", "Советник", "Начальник академии"];
     const PROTECTED_LOGINS = ['kyz', 'per', 'teacher'];
+
+    // Иерархия должностей (Советник между ректором и начальником)
+    const ROLE_HIERARCHY = {
+        "Без должности": 0,
+        "Курсант": 1,
+        "Секретарь": 2,
+        "Заведующий": 3,
+        "Куратор": 4,
+        "Декан": 4, 
+        "Проректор": 5,
+        "Ректор": 6,
+        "Советник": 6.5,
+        "Начальник академии": 7
+    };
 
     let currentLogin = null;
     let currentUser = null;
-    let currentEditingCadetOldName = ''; // Хранит старое имя для логов
+    let currentEditingCadetOldName = '';
 
     function showStatus(msg) {
         const el = document.getElementById('status');
@@ -324,13 +326,7 @@
         const id = Date.now().toString();
         const timeStr = new Date().toLocaleString('ru-RU');
         const userStr = currentUser ? `${currentUser.name} (${currentLogin})` : 'Система';
-        
-        await database.ref(`logs/${id}`).set({
-            time: timeStr,
-            user: userStr,
-            action: actionText,
-            timestamp: firebase.database.ServerValue.TIMESTAMP
-        });
+        await database.ref(`logs/${id}`).set({ time: timeStr, user: userStr, action: actionText, timestamp: firebase.database.ServerValue.TIMESTAMP });
     }
 
     function getCadetName(id) {
@@ -351,7 +347,6 @@
             const user = snapshot.val();
             if (!user) return;
             currentUser = user;
-
             if (user.role === 'Без должности') {
                 document.getElementById('authBlock').style.display = 'none';
                 document.getElementById('mainBlock').style.display = 'none';
@@ -360,7 +355,6 @@
                 document.getElementById('authBlock').style.display = 'none';
                 document.getElementById('waitingBlock').style.display = 'none';
                 document.getElementById('mainBlock').style.display = 'block';
-                
                 setupProfile();
                 listenCadets(); 
             }
@@ -370,12 +364,7 @@
     async function loginUser() {
         const login = document.getElementById('loginInput').value.trim();
         const pwd = document.getElementById('passwordInput').value.trim();
-        
-        if (login.toLowerCase() === 'teacher') {
-            document.getElementById('loginError').innerText = 'Вход по общим логинам отключен. Используйте личный аккаунт.';
-            return;
-        }
-
+        if (login.toLowerCase() === 'teacher') return document.getElementById('loginError').innerText = 'Вход по общим логинам отключен.';
         if(!login || !pwd) return;
 
         const snap = await database.ref(`users/${login}`).once('value');
@@ -396,7 +385,7 @@
         const err = document.getElementById('regError');
 
         if (!name || !login || !pwd) return err.innerText = 'Заполните все поля';
-        if (PROTECTED_LOGINS.includes(login.toLowerCase())) return err.innerText = 'Этот логин зарезервирован системой.';
+        if (PROTECTED_LOGINS.includes(login.toLowerCase())) return err.innerText = 'Логин зарезервирован системой.';
 
         const snap = await database.ref(`users/${login}`).once('value');
         if (snap.exists()) return err.innerText = 'Логин уже занят';
@@ -416,7 +405,6 @@
         document.getElementById('avatarBtn').innerText = currentUser.name.substring(0, 2).toUpperCase();
         
         const canAssign = ADMIN_ROLES.includes(currentUser.role) || currentLogin === 'kyz';
-        
         document.getElementById('adminGearBtn').style.display = canAssign ? 'block' : 'none';
         document.getElementById('logsBtn').style.display = canAssign ? 'block' : 'none';
     }
@@ -428,26 +416,50 @@
     };
     window.onclick = () => document.getElementById('profileMenu').style.display = 'none';
 
+    // УПРАВЛЕНИЕ РОЛЯМИ
     function openAdminModal() {
         document.getElementById('targetLogin').value = '';
         document.getElementById('adminModal').style.display = 'flex';
     }
 
-    // --- ЛОГИКА ВКЛАДОК И ЛОГОВ ---
+    async function assignRole() {
+        const targetLogin = document.getElementById('targetLogin').value.trim();
+        const newRole = document.getElementById('targetRole').value;
+        
+        if (!targetLogin) return;
+        if (targetLogin === currentLogin) { showStatus('❌ Нельзя изменить должность себе'); return; }
+
+        const snap = await database.ref(`users/${targetLogin}`).once('value');
+        const targetUser = snap.val();
+
+        if (!targetUser) { showStatus('❌ Пользователь не найден'); return; }
+
+        if (currentLogin !== 'kyz') {
+            const myRank = ROLE_HIERARCHY[currentUser.role] || 0;
+            const targetRoleRank = ROLE_HIERARCHY[newRole] || 0;
+            const targetCurrentRank = ROLE_HIERARCHY[targetUser.role] || 0;
+
+            if (myRank <= targetRoleRank) { showStatus('❌ Недостаточно прав для этой должности'); return; }
+            if (myRank <= targetCurrentRank && targetCurrentRank !== 0) { showStatus('❌ Нельзя менять должность сотруднику вашего уровня'); return; }
+        }
+
+        await database.ref(`users/${targetLogin}/role`).set(newRole);
+        await writeLog(`Выдал должность «${newRole}» пользователю ${targetLogin}`);
+        
+        document.getElementById('adminModal').style.display = 'none';
+        showStatus('✅ Должность обновлена');
+    }
+
+    // ЛОГИРОВАНИЕ
     function openLogsModal() {
         document.getElementById('logsModal').style.display = 'flex';
-        switchLogTab('actions'); // по умолчанию открываем действия
-        
-        // Загрузка логов
+        switchLogTab('actions');
         database.ref('logs').orderByChild('timestamp').limitToLast(100).on('value', (snap) => {
             const tbody = document.getElementById('logsTableBody');
             tbody.innerHTML = '';
-            if (!snap.exists()) {
-                tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;">Записей пока нет</td></tr>';
-                return;
-            }
+            if (!snap.exists()) return tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;">Записей пока нет</td></tr>';
             let logsArray = [];
-            snap.forEach(child => { logsArray.push(child.val()); });
+            snap.forEach(child => logsArray.push(child.val()));
             logsArray.reverse().forEach(log => {
                 tbody.innerHTML += `<tr><td style="color:#64748b; font-size:0.8rem;">${log.time}</td><td><b>${log.user}</b></td><td>${log.action}</td></tr>`;
             });
@@ -457,7 +469,6 @@
     function switchLogTab(tab) {
         document.querySelectorAll('.logs-content').forEach(el => el.classList.remove('active'));
         document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
-        
         if(tab === 'actions') {
             document.getElementById('actionsTab').classList.add('active');
             document.getElementById('tabActionsBtn').classList.add('active');
@@ -473,13 +484,11 @@
         const users = snap.val();
         const tbody = document.getElementById('usersTableBody');
         tbody.innerHTML = '';
-        
         if(users) {
             Object.keys(users).forEach(login => {
                 const user = users[login];
                 tbody.innerHTML += `<tr class="user-row" data-login="${login.toLowerCase()}">
-                    <td><b>${login}</b></td>
-                    <td>${user.name}</td>
+                    <td><b>${login}</b></td><td>${user.name}</td>
                     <td><code style="background:#f1f5f9; padding:4px 8px; border-radius:6px; color:#ef4444;">${user.pwd}</code></td>
                     <td><span style="font-size:0.8rem; color:var(--primary); font-weight:bold;">${user.role}</span></td>
                 </tr>`;
@@ -489,30 +498,12 @@
 
     function filterUsers() {
         const query = document.getElementById('userSearch').value.toLowerCase();
-        document.querySelectorAll('.user-row').forEach(row => {
-            row.style.display = row.dataset.login.includes(query) ? '' : 'none';
-        });
-    }
-
-    async function assignRole() {
-        const targetLogin = document.getElementById('targetLogin').value.trim();
-        const targetRole = document.getElementById('targetRole').value;
-        if (!targetLogin) return;
-
-        const snap = await database.ref(`users/${targetLogin}`).once('value');
-        if (snap.exists()) {
-            await database.ref(`users/${targetLogin}/role`).set(targetRole);
-            await writeLog(`Выдал должность «${targetRole}» пользователю ${targetLogin}`);
-            
-            document.getElementById('adminModal').style.display = 'none';
-            showStatus('⚙️ Должность обновлена');
-        } else {
-            showStatus('❌ Пользователь не найден');
-        }
+        document.querySelectorAll('.user-row').forEach(row => { row.style.display = row.dataset.login.includes(query) ? '' : 'none'; });
     }
 
     function logout() { location.reload(); }
 
+    // УПРАВЛЕНИЕ КУРСАНТАМИ
     function listenCadets() {
         database.ref('cadets').on('value', (snap) => {
             window.cadetsData = snap.val() ? Object.values(snap.val()) : [];
@@ -529,25 +520,19 @@
             const id = Date.now().toString();
             await database.ref(`cadets/${id}`).set({ id, surname, name, patronymic: pat });
             await writeLog(`Зачислил курсанта: ${surname} ${name} ${pat}`);
-            
             document.getElementById('newSurname').value = ''; document.getElementById('newName').value = ''; document.getElementById('newPatronymic').value = '';
             showStatus('✅ Зачислен');
         }
     }
 
-    // --- РЕДАКТИРОВАНИЕ КУРСАНТА ---
     function openEditCadet(id) {
         const cadet = window.cadetsData.find(c => c.id === id);
         if (!cadet) return;
-        
         document.getElementById('editCadetId').value = cadet.id;
         document.getElementById('editSurname').value = cadet.surname;
         document.getElementById('editName').value = cadet.name;
         document.getElementById('editPatronymic').value = cadet.patronymic;
-        
-        // Запоминаем старое имя для логов
         currentEditingCadetOldName = `${cadet.surname} ${cadet.name} ${cadet.patronymic}`;
-        
         document.getElementById('editCadetModal').style.display = 'flex';
     }
 
@@ -556,49 +541,33 @@
         const surname = document.getElementById('editSurname').value.trim();
         const name = document.getElementById('editName').value.trim();
         const pat = document.getElementById('editPatronymic').value.trim();
-
         if (!surname || !name || !pat) return;
-
         await database.ref(`cadets/${id}`).update({ surname, name, patronymic: pat });
-        
-        const newName = `${surname} ${name} ${pat}`;
-        await writeLog(`Изменил ФИО курсанта: ${currentEditingCadetOldName} ➔ ${newName}`);
-        
+        await writeLog(`Изменил ФИО курсанта: ${currentEditingCadetOldName} ➔ ${surname} ${name} ${pat}`);
         document.getElementById('editCadetModal').style.display = 'none';
         showStatus('✅ Данные обновлены');
     }
-    // -------------------------------
 
     window.delCadet = async (id) => { 
         if(confirm("Отчислить?")) {
-            const cName = getCadetName(id);
+            await writeLog(`Отчислил курсанта: ${getCadetName(id)}`);
             await database.ref(`cadets/${id}`).remove();
-            await writeLog(`Отчислил курсанта: ${cName}`);
         }
     };
     
     window.addMark = async (id, subj, mark) => { 
         const r=database.ref(`cadets/${id}/grades/${subj}`); 
-        const s=await r.once('value'); 
-        const m=s.val()||[]; 
-        m.push(mark); 
-        await r.set(m); 
-        
-        const cName = getCadetName(id);
-        await writeLog(`Поставил оценку «${mark}» по предмету «${subj}» курсанту: ${cName}`);
+        const m=(await r.once('value')).val()||[]; 
+        m.push(mark); await r.set(m); 
+        await writeLog(`Оценка «${mark}» по предмету «${subj}» курсанту: ${getCadetName(id)}`);
     };
     
     window.delMark = async (id, subj, i) => { 
         const r=database.ref(`cadets/${id}/grades/${subj}`); 
-        const s=await r.once('value'); 
-        const m=s.val()||[]; 
+        const m=(await r.once('value')).val()||[]; 
         if(m[i]){ 
-            const deletedMark = m[i];
-            m.splice(i,1); 
-            await r.set(m); 
-            
-            const cName = getCadetName(id);
-            await writeLog(`Удалил оценку «${deletedMark}» по предмету «${subj}» у курсанта: ${cName}`);
+            const deletedMark = m[i]; m.splice(i,1); await r.set(m); 
+            await writeLog(`Удалил оценку «${deletedMark}» по предмету «${subj}» у курсанта: ${getCadetName(id)}`);
         }
     };
 
@@ -607,74 +576,36 @@
     function renderTable() {
         const tbody = document.getElementById('tableBody');
         const isReadOnly = (currentUser.role === 'Курсант');
-
         document.getElementById('addCadetForm').style.display = isReadOnly ? 'none' : 'grid';
-
-        document.getElementById('tableHeadRow').innerHTML = `
-            <th>Курсант</th>
-            <th>Военно-тактическая</th>
-            <th>Русский язык</th>
-            <th>Юридический</th>
-            <th style="text-align:center;">Средний балл</th>
-            ${isReadOnly ? '' : '<th style="text-align:center;">Удалить</th>'}
-        `;
-
+        document.getElementById('tableHeadRow').innerHTML = `<th>Курсант</th><th>Военно-тактическая</th><th>Русский язык</th><th>Юридический</th><th style="text-align:center;">Средний балл</th>${isReadOnly ? '' : '<th style="text-align:center;">Удалить</th>'}`;
+        
         let cadets = window.cadetsData || [];
-        
-        // --- ФИЛЬТРАЦИЯ ПО ПОИСКУ ---
         const searchQuery = document.getElementById('searchCadetInput').value.toLowerCase().trim();
-        if (searchQuery) {
-            cadets = cadets.filter(c => c.surname.toLowerCase().includes(searchQuery));
-        }
+        if (searchQuery) cadets = cadets.filter(c => c.surname.toLowerCase().includes(searchQuery));
         
-        if (!cadets.length) {
-            const colSpan = isReadOnly ? 5 : 6;
-            return tbody.innerHTML = `<tr><td colspan="${colSpan}" style="text-align:center; padding:40px;">Курсанты не найдены</td></tr>`;
-        }
+        if (!cadets.length) return tbody.innerHTML = `<tr><td colspan="${isReadOnly ? 5 : 6}" style="text-align:center; padding:40px;">Курсанты не найдены</td></tr>`;
         
         tbody.innerHTML = '';
         cadets.forEach(cadet => {
             const isInitials = cadet.name.length <= 2 && cadet.patronymic.length <= 2;
-            
-            // Кнопка редактирования только для тех, кто может удалять
-            const editBtnHtml = isReadOnly ? '' : `<button class="edit-icon" title="Редактировать ФИО" onclick="openEditCadet('${cadet.id}')">✏️</button>`;
-
+            const editBtnHtml = isReadOnly ? '' : `<button class="edit-icon" onclick="openEditCadet('${cadet.id}')">✏️</button>`;
             const nameDisplay = isInitials 
                 ? `<div style="display:flex; align-items:center;"><b>${cadet.surname} ${cadet.name} ${cadet.patronymic}</b> ${editBtnHtml}</div>` 
                 : `<div style="display:flex; align-items:center;"><b>${cadet.surname}</b> ${editBtnHtml}</div><div style="font-size:0.8rem;color:#64748b; margin-top:2px;">${cadet.name} ${cadet.patronymic}</div>`;
-
             let tr = `<tr><td>${nameDisplay}</td>`;
-
             let allMarks = [];
             
             SUBJECTS.forEach(subj => {
                 const marks = (cadet.grades || {})[subj] || [];
                 allMarks.push(...marks);
-                
-                let marksHtml = marks.map((m, i) => {
-                    const action = isReadOnly ? '' : `onclick="delMark('${cadet.id}','${subj}',${i})"`;
-                    const cursor = isReadOnly ? 'cursor: default;' : 'cursor: pointer;';
-                    const transformStyle = isReadOnly ? 'transform: none !important;' : '';
-                    return `<span class="grade-badge ${getMarkClass(m)}" ${action} style="${cursor} ${transformStyle}">${m}</span>`;
-                }).join('');
-                
-                let controlHtml = isReadOnly ? '' : `
-                    <div class="grade-control">
-                        <select id="sel_${cadet.id}_${subj}" style="width:auto; padding:4px; margin:0; border:1px solid #e2e8f0; border-radius:8px;"><option>5</option><option>4</option><option>3</option><option>2</option><option>н</option><option>о</option></select>
-                        <button class="action-btn" onclick="addMark('${cadet.id}','${subj}', document.getElementById('sel_${cadet.id}_${subj}').value)">+</button>
-                    </div>`;
-
+                let marksHtml = marks.map((m, i) => `<span class="grade-badge ${getMarkClass(m)}" ${isReadOnly?'':'onclick="delMark(\''+cadet.id+'\',\''+subj+'\','+i+')"'} style="${isReadOnly?'cursor:default; transform:none;':'cursor:pointer;'}">${m}</span>`).join('');
+                let controlHtml = isReadOnly ? '' : `<div class="grade-control"><select id="sel_${cadet.id}_${subj}" style="width:auto; padding:4px; border:1px solid #e2e8f0; border-radius:8px;"><option>5</option><option>4</option><option>3</option><option>2</option><option>н</option><option>о</option></select><button class="action-btn" onclick="addMark('${cadet.id}','${subj}', document.getElementById('sel_${cadet.id}_${subj}').value)">+</button></div>`;
                 tr += `<td><div class="grades-list">${marksHtml}</div>${controlHtml}</td>`;
             });
-
             const nums = allMarks.map(m => parseInt(m)).filter(n => !isNaN(n));
             const avg = nums.length ? (nums.reduce((a,b)=>a+b,0)/nums.length).toFixed(1) : "—";
             tr += `<td style="text-align:center"><span class="avg-pill" style="${avg!=='—'&&avg<3.5?'background:linear-gradient(135deg, #f59e0b, #d97706);':''} ${avg!=='—'&&avg<2.5?'background:linear-gradient(135deg, #ef4444, #dc2626);':''}">${avg}</span></td>`;
-            
-            if (!isReadOnly) {
-                tr += `<td style="text-align:center"><button class="action-btn" style="color:red; border:none; font-size:1.2rem;" onclick="delCadet('${cadet.id}')">🗑️</button></td>`;
-            }
-            
+            if (!isReadOnly) tr += `<td style="text-align:center"><button class="action-btn" style="color:red; border:none; font-size:1.2rem;" onclick="delCadet('${cadet.id}')">🗑️</button></td>`;
             tr += `</tr>`;
             tbody.innerHTML += tr;
         });

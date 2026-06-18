@@ -273,11 +273,9 @@
     const database = firebase.database();
 
     const SUBJECTS = ["Военно-тактическая", "Русский язык", "Юридический"];
-    // Преподавателя нет в ADMIN_ROLES, так как он не должен выдавать должности
     const ADMIN_ROLES = ["Куратор", "Декан", "Проректор", "Ректор", "Советник", "Начальник академии"];
     const PROTECTED_LOGINS = ['kyz', 'per', 'teacher', 'medn123'];
 
-    // Преподаватель добавлен в иерархию под номером 2
     const ROLE_HIERARCHY = {
         "Без должности": 0,
         "Курсант": 1,
@@ -302,11 +300,16 @@
         setTimeout(() => el.style.display = 'none', 3000);
     }
 
+    // ИСПРАВЛЕНО: Безопасная запись через .push() без конфликтов ID
     async function writeLog(actionText) {
-        const id = Date.now().toString();
         const timeStr = new Date().toLocaleString('ru-RU');
         const userStr = currentUser ? `${currentUser.name} (${currentLogin})` : 'Система';
-        await database.ref(`logs/${id}`).set({ time: timeStr, user: userStr, action: actionText, timestamp: firebase.database.ServerValue.TIMESTAMP });
+        await database.ref('logs').push({ 
+            time: timeStr, 
+            user: userStr, 
+            action: actionText, 
+            timestamp: firebase.database.ServerValue.TIMESTAMP 
+        });
     }
 
     function getCadetName(id) {
@@ -323,20 +326,12 @@
     }
 
     function listenUserAccess(login) {
-        // Скрываем окно авторизации, если идет загрузка профиля
         document.getElementById('authBlock').style.display = 'none';
 
         database.ref(`users/${login}`).on('value', (snapshot) => {
             const user = snapshot.val();
-            
-            // Если аккаунт удалили из базы, но логин остался в памяти
-            if (!user) {
-                logout(); 
-                return;
-            }
-            
+            if (!user) { logout(); return; }
             currentUser = user;
-            
             const isSuperAdmin = login === 'kyz' || login.toLowerCase() === 'medn123';
             
             if (user.role === 'Без должности' && !isSuperAdmin) {
@@ -364,7 +359,6 @@
 
         if (user && user.pwd === pwd) {
             currentLogin = login;
-            // СОХРАНЯЕМ ЛОГИН В БРАУЗЕРЕ
             localStorage.setItem('academyLogin', login);
             listenUserAccess(login); 
         } else {
@@ -447,22 +441,28 @@
         showStatus('✅ Должность обновлена');
     }
 
+    // ИСПРАВЛЕНО: Безопасный разовый запрос .once() без зависаний и без требования индексов в Firebase
     function openLogsModal() {
         document.getElementById('logsModal').style.display = 'flex';
-        database.ref('logs').orderByChild('timestamp').limitToLast(100).on('value', (snap) => {
-            const tbody = document.getElementById('logsTableBody');
+        const tbody = document.getElementById('logsTableBody');
+        tbody.innerHTML = '<tr><td colspan="3" style="text-align:center; color: #64748b;">Загрузка логов...</td></tr>';
+
+        database.ref('logs').limitToLast(100).once('value', (snap) => {
             tbody.innerHTML = '';
             if (!snap.exists()) return tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;">Записей пока нет</td></tr>';
+            
             let logsArray = [];
-            snap.forEach(child => logsArray.push(child.val()));
+            snap.forEach(child => {
+                logsArray.push(child.val());
+            });
+            
             logsArray.reverse().forEach(log => {
-                tbody.innerHTML += `<tr><td style="color:#64748b; font-size:0.8rem;">${log.time}</td><td><b>${log.user}</b></td><td>${log.action}</td></tr>`;
+                tbody.innerHTML += `<tr><td style="color:#64748b; font-size:0.8rem;">${log.time || '—'}</td><td><b>${log.user || 'Система'}</b></td><td>${log.action || ''}</td></tr>`;
             });
         });
     }
 
     function logout() { 
-        // ОЧИЩАЕМ ЛОГИН ИЗ ПАМЯТИ ПРИ ВЫХОДЕ
         localStorage.removeItem('academyLogin');
         location.reload(); 
     }

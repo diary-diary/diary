@@ -300,7 +300,6 @@
         setTimeout(() => el.style.display = 'none', 3000);
     }
 
-    // ИСПРАВЛЕНО: Безопасная запись через .push() без конфликтов ID
     async function writeLog(actionText) {
         const timeStr = new Date().toLocaleString('ru-RU');
         const userStr = currentUser ? `${currentUser.name} (${currentLogin})` : 'Система';
@@ -441,7 +440,6 @@
         showStatus('✅ Должность обновлена');
     }
 
-    // ИСПРАВЛЕНО: Безопасный разовый запрос .once() без зависаний и без требования индексов в Firebase
     function openLogsModal() {
         document.getElementById('logsModal').style.display = 'flex';
         const tbody = document.getElementById('logsTableBody');
@@ -511,11 +509,10 @@
         showStatus('✅ Данные обновлены');
     }
 
+    // ИЗМЕНЕНИЕ: Убрано подтверждение. Теперь курсант удаляется сразу.
     window.delCadet = async (id) => { 
-        if(confirm("Отчислить?")) {
-            await writeLog(`Отчислил курсанта: ${getCadetName(id)}`);
-            await database.ref(`cadets/${id}`).remove();
-        }
+        await writeLog(`Отчислил курсанта: ${getCadetName(id)}`);
+        await database.ref(`cadets/${id}`).remove();
     };
     
     window.addMark = async (id, subj, mark) => { 

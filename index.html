@@ -213,6 +213,8 @@
         <select id="targetRole" style="margin-bottom: 20px;">
             <option value="Без должности">Без должности</option>
             <option value="Курсант">Курсант</option>
+            <option value="Сотрудник ПК">Сотрудник ПК</option>
+            <option value="Руководитель ПК">Руководитель ПК</option>
             <option value="Преподаватель">Преподаватель</option>
             <option value="Заведующий">Заведующий</option>
             <option value="Секретарь">Секретарь</option>
@@ -237,7 +239,6 @@
         <div style="font-size:0.8rem; color:var(--text-muted); font-weight:bold; margin-top:10px;">Имя</div>
         <input type="text" id="editName">
         <div style="font-size:0.8rem; color:var(--text-muted); font-weight:bold; margin-top:10px;">Отчество</div>
-        <input type="text" id="editPatronymic">
         <button class="btn-primary" onclick="saveCadetEdit()">Сохранить</button>
         <button class="logout-btn" onclick="document.getElementById('editCadetModal').style.display='none'" style="background:none; color:var(--text-muted);">Отмена</button>
     </div>
@@ -273,22 +274,27 @@
     const database = firebase.database();
 
     const SUBJECTS = ["Военно-тактическая", "Русский язык", "Юридический"];
-    const ADMIN_ROLES = ["Куратор", "Декан", "Проректор", "Ректор", "Советник", "Начальник академии"];
+    const ADMIN_ROLES = ["Руководитель ПК", "Куратор", "Декан", "Проректор", "Ректор", "Советник", "Начальник академии"];
     const PROTECTED_LOGINS = ['kyz', 'per', 'teacher', 'medn123'];
 
     const ROLE_HIERARCHY = {
         "Без должности": 0,
         "Курсант": 1,
-        "Преподаватель": 2,
-        "Секретарь": 3,
-        "Заведующий": 4,
-        "Куратор": 5,
-        "Декан": 5, 
-        "Проректор": 6,
-        "Ректор": 7,
-        "Советник": 8,
-        "Начальник академии": 9
+        "Сотрудник ПК": 2,
+        "Руководитель ПК": 3,
+        "Преподаватель": 4,
+        "Секретарь": 5,
+        "Заведующий": 6,
+        "Куратор": 7,
+        "Декан": 7, 
+        "Проректор": 8,
+        "Ректор": 9,
+        "Советник": 10,
+        "Начальник академии": 11
     };
+
+    const ROLES_CAN_MANAGE_GRADES = ["Преподаватель", "Заведующий", "Секретарь", "Куратор", "Декан", "Проректор", "Ректор", "Советник", "Начальник академии"];
+    const ROLES_CAN_ADD_CADETS = ["Сотрудник ПК", ...ROLES_CAN_MANAGE_GRADES];
 
     let currentLogin = null;
     let currentUser = null;
@@ -331,8 +337,11 @@
             const user = snapshot.val();
             if (!user) { logout(); return; }
             currentUser = user;
+            
+            // Если kyz или medn123 - это суперадмины
             const isSuperAdmin = login === 'kyz' || login.toLowerCase() === 'medn123';
             
+            // Суперадмины пропускают экран ожидания даже с ролью "Без должности"
             if (user.role === 'Без должности' && !isSuperAdmin) {
                 document.getElementById('authBlock').style.display = 'none';
                 document.getElementById('mainBlock').style.display = 'none';
@@ -394,8 +403,10 @@
         const isSuperAdmin = currentLogin === 'kyz' || currentLogin.toLowerCase() === 'medn123';
         const canAssign = ADMIN_ROLES.includes(currentUser.role) || isSuperAdmin;
         
+        const canSeeLogs = ["Куратор", "Декан", "Проректор", "Ректор", "Советник", "Начальник академии"].includes(currentUser.role) || isSuperAdmin;
+        
         document.getElementById('adminGearBtn').style.display = canAssign ? 'block' : 'none';
-        document.getElementById('logsBtn').style.display = canAssign ? 'block' : 'none';
+        document.getElementById('logsBtn').style.display = canSeeLogs ? 'block' : 'none';
     }
 
     document.getElementById('avatarBtn').onclick = (e) => {
@@ -415,16 +426,34 @@
         const newRole = document.getElementById('targetRole').value;
         
         if (!targetLogin) return;
-        if (targetLogin === currentLogin) { showStatus('❌ Нельзя изменить должность себе'); return; }
+        
+        const isSuperAdmin = currentLogin === 'kyz' || currentLogin.toLowerCase() === 'medn123';
+        
+        // Блокируем смену должности самому себе для всех, КРОМЕ суперадминов (kyz / medn123)
+        if (targetLogin === currentLogin && !isSuperAdmin) { 
+            showStatus('❌ Нельзя изменить должность себе'); 
+            return; 
+        }
 
         const snap = await database.ref(`users/${targetLogin}`).once('value');
         const targetUser = snap.val();
 
         if (!targetUser) { showStatus('❌ Пользователь не найден'); return; }
 
-        const isSuperAdmin = currentLogin === 'kyz' || currentLogin.toLowerCase() === 'medn123';
+        // ОГРАНИЧЕНИЯ ДЛЯ РУКОВОДИТЕЛЯ ПК (суперадмины игнорируют)
+        if (currentUser.role === 'Руководитель ПК' && !isSuperAdmin) {
+            if (newRole !== 'Сотрудник ПК' && newRole !== 'Без должности') {
+                showStatus('❌ Вы можете выдавать/снимать только должность «Сотрудник ПК»');
+                return;
+            }
+            if (targetUser.role !== 'Сотрудник ПК' && targetUser.role !== 'Без должности') {
+                showStatus('❌ Вы не имеете права изменять должность этому сотруднику');
+                return;
+            }
+        }
 
-        if (!isSuperAdmin) {
+        // Проверка обычной иерархии должностей (суперадмины игнорируют)
+        if (!isSuperAdmin && currentUser.role !== 'Руководитель ПК') {
             const myRank = ROLE_HIERARCHY[currentUser.role] || 0;
             const targetRoleRank = ROLE_HIERARCHY[newRole] || 0;
             const targetCurrentRank = ROLE_HIERARCHY[targetUser.role] || 0;
@@ -473,7 +502,9 @@
     }
 
     async function addCadet() {
-        if (currentUser.role === 'Курсант') return; 
+        const isSuperAdmin = currentLogin === 'kyz' || currentLogin.toLowerCase() === 'medn123';
+        if (!ROLES_CAN_ADD_CADETS.includes(currentUser.role) && !isSuperAdmin) return; 
+
         const surname = document.getElementById('newSurname').value.trim();
         const name = document.getElementById('newName').value.trim();
         const pat = document.getElementById('newPatronymic').value.trim();
@@ -487,6 +518,9 @@
     }
 
     function openEditCadet(id) {
+        const isSuperAdmin = currentLogin === 'kyz' || currentLogin.toLowerCase() === 'medn123';
+        if (!ROLES_CAN_MANAGE_GRADES.includes(currentUser.role) && !isSuperAdmin) return;
+
         const cadet = window.cadetsData.find(c => c.id === id);
         if (!cadet) return;
         document.getElementById('editCadetId').value = cadet.id;
@@ -498,6 +532,9 @@
     }
 
     async function saveCadetEdit() {
+        const isSuperAdmin = currentLogin === 'kyz' || currentLogin.toLowerCase() === 'medn123';
+        if (!ROLES_CAN_MANAGE_GRADES.includes(currentUser.role) && !isSuperAdmin) return;
+
         const id = document.getElementById('editCadetId').value;
         const surname = document.getElementById('editSurname').value.trim();
         const name = document.getElementById('editName').value.trim();
@@ -509,13 +546,18 @@
         showStatus('✅ Данные обновлены');
     }
 
-    // ИЗМЕНЕНИЕ: Убрано подтверждение. Теперь курсант удаляется сразу.
     window.delCadet = async (id) => { 
+        const isSuperAdmin = currentLogin === 'kyz' || currentLogin.toLowerCase() === 'medn123';
+        if (!ROLES_CAN_MANAGE_GRADES.includes(currentUser.role) && !isSuperAdmin) return;
+
         await writeLog(`Отчислил курсанта: ${getCadetName(id)}`);
         await database.ref(`cadets/${id}`).remove();
     };
     
     window.addMark = async (id, subj, mark) => { 
+        const isSuperAdmin = currentLogin === 'kyz' || currentLogin.toLowerCase() === 'medn123';
+        if (!ROLES_CAN_MANAGE_GRADES.includes(currentUser.role) && !isSuperAdmin) return;
+
         const r=database.ref(`cadets/${id}/grades/${subj}`); 
         const m=(await r.once('value')).val()||[]; 
         m.push(mark); await r.set(m); 
@@ -523,6 +565,9 @@
     };
     
     window.delMark = async (id, subj, i) => { 
+        const isSuperAdmin = currentLogin === 'kyz' || currentLogin.toLowerCase() === 'medn123';
+        if (!ROLES_CAN_MANAGE_GRADES.includes(currentUser.role) && !isSuperAdmin) return;
+
         const r=database.ref(`cadets/${id}/grades/${subj}`); 
         const m=(await r.once('value')).val()||[]; 
         if(m[i]){ 
@@ -535,20 +580,25 @@
 
     function renderTable() {
         const tbody = document.getElementById('tableBody');
-        const isReadOnly = (currentUser.role === 'Курсант');
-        document.getElementById('addCadetForm').style.display = isReadOnly ? 'none' : 'grid';
-        document.getElementById('tableHeadRow').innerHTML = `<th>Курсант</th><th>Военно-тактическая</th><th>Русский язык</th><th>Юридический</th><th style="text-align:center;">Средний балл</th>${isReadOnly ? '' : '<th style="text-align:center;">Удалить</th>'}`;
+        const isSuperAdmin = currentLogin === 'kyz' || currentLogin.toLowerCase() === 'medn123';
+        
+        const canManageGrades = ROLES_CAN_MANAGE_GRADES.includes(currentUser.role) || isSuperAdmin;
+        const canAddCadets = ROLES_CAN_ADD_CADETS.includes(currentUser.role) || isSuperAdmin;
+
+        document.getElementById('addCadetForm').style.display = canAddCadets ? 'grid' : 'none';
+        
+        document.getElementById('tableHeadRow').innerHTML = `<th>Курсант</th><th>Военно-тактическая</th><th>Русский язык</th><th>Юридический</th><th style="text-align:center;">Средний балл</th>${canManageGrades ? '<th style="text-align:center;">Удалить</th>' : ''}`;
         
         let cadets = window.cadetsData || [];
         const searchQuery = document.getElementById('searchCadetInput').value.toLowerCase().trim();
         if (searchQuery) cadets = cadets.filter(c => c.surname.toLowerCase().includes(searchQuery));
         
-        if (!cadets.length) return tbody.innerHTML = `<tr><td colspan="${isReadOnly ? 5 : 6}" style="text-align:center; padding:40px;">Курсанты не найдены</td></tr>`;
+        if (!cadets.length) return tbody.innerHTML = `<tr><td colspan="${canManageGrades ? 6 : 5}" style="text-align:center; padding:40px;">Курсанты не найдены</td></tr>`;
         
         tbody.innerHTML = '';
         cadets.forEach(cadet => {
             const isInitials = cadet.name.length <= 2 && cadet.patronymic.length <= 2;
-            const editBtnHtml = isReadOnly ? '' : `<button class="edit-icon" onclick="openEditCadet('${cadet.id}')">✏️</button>`;
+            const editBtnHtml = canManageGrades ? `<button class="edit-icon" onclick="openEditCadet('${cadet.id}')">✏️</button>` : '';
             const nameDisplay = isInitials 
                 ? `<div style="display:flex; align-items:center;"><b>${cadet.surname} ${cadet.name} ${cadet.patronymic}</b> ${editBtnHtml}</div>` 
                 : `<div style="display:flex; align-items:center;"><b>${cadet.surname}</b> ${editBtnHtml}</div><div style="font-size:0.8rem;color:#64748b; margin-top:2px;">${cadet.name} ${cadet.patronymic}</div>`;
@@ -558,14 +608,14 @@
             SUBJECTS.forEach(subj => {
                 const marks = (cadet.grades || {})[subj] || [];
                 allMarks.push(...marks);
-                let marksHtml = marks.map((m, i) => `<span class="grade-badge ${getMarkClass(m)}" ${isReadOnly?'':'onclick="delMark(\''+cadet.id+'\',\''+subj+'\','+i+')"'} style="${isReadOnly?'cursor:default; transform:none;':'cursor:pointer;'}">${m}</span>`).join('');
-                let controlHtml = isReadOnly ? '' : `<div class="grade-control"><select id="sel_${cadet.id}_${subj}" style="width:auto; padding:4px; border:1px solid #e2e8f0; border-radius:8px;"><option>5</option><option>4</option><option>3</option><option>2</option><option>н</option><option>о</option></select><button class="action-btn" onclick="addMark('${cadet.id}','${subj}', document.getElementById('sel_${cadet.id}_${subj}').value)">+</button></div>`;
+                let marksHtml = marks.map((m, i) => `<span class="grade-badge ${getMarkClass(m)}" ${canManageGrades?'onclick="delMark(\''+cadet.id+'\',\''+subj+'\','+i+')"':''} style="${canManageGrades?'cursor:pointer;':'cursor:default; transform:none;'}">${m}</span>`).join('');
+                let controlHtml = canManageGrades ? `<div class="grade-control"><select id="sel_${cadet.id}_${subj}" style="width:auto; padding:4px; border:1px solid #e2e8f0; border-radius:8px;"><option>5</option><option>4</option><option>3</option><option>2</option><option>н</option><option>о</option></select><button class="action-btn" onclick="addMark('${cadet.id}','${subj}', document.getElementById('sel_${cadet.id}_${subj}').value)">+</button></div>` : '';
                 tr += `<td><div class="grades-list">${marksHtml}</div>${controlHtml}</td>`;
             });
             const nums = allMarks.map(m => parseInt(m)).filter(n => !isNaN(n));
             const avg = nums.length ? (nums.reduce((a,b)=>a+b,0)/nums.length).toFixed(1) : "—";
             tr += `<td style="text-align:center"><span class="avg-pill" style="${avg!=='—'&&avg<3.5?'background:linear-gradient(135deg, #f59e0b, #d97706);':''} ${avg!=='—'&&avg<2.5?'background:linear-gradient(135deg, #ef4444, #dc2626);':''}">${avg}</span></td>`;
-            if (!isReadOnly) tr += `<td style="text-align:center"><button class="action-btn" style="color:red; border:none; font-size:1.2rem;" onclick="delCadet('${cadet.id}')">🗑️</button></td>`;
+            if (canManageGrades) tr += `<td style="text-align:center"><button class="action-btn" style="color:red; border:none; font-size:1.2rem;" onclick="delCadet('${cadet.id}')">🗑️</button></td>`;
             tr += `</tr>`;
             tbody.innerHTML += tr;
         });

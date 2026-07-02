@@ -2,633 +2,379 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Электронный дневник — Академия</title>
-    
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Электронный дневник</title>
     <style>
-        :root {
-            --primary: #4f46e5; --primary-hover: #4338ca;
-            --success: #10b981; --danger: #ef4444;
-            --text-main: #1e293b; --text-muted: #64748b;
-            --border-color: rgba(226, 232, 240, 0.6);
-            --card-bg: rgba(255, 255, 255, 0.85);
-        }
-
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        
         body {
-            font-family: 'Inter', system-ui, sans-serif;
-            color: var(--text-main);
-            min-height: 100vh;
-            padding: 40px 20px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #2b2d31; /* Темная тема */
+            color: #ffffff;
+            padding: 20px;
+            margin: 0;
             position: relative;
-            overflow-x: hidden;
-            background: #0f172a;
+            min-height: 100vh;
         }
 
-        /* Анимированный фон */
-        .bg-blobs { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: -1; overflow: hidden; pointer-events: none; }
-        .blob { position: absolute; border-radius: 50%; filter: blur(90px); opacity: 0.6; animation: float 20s infinite ease-in-out alternate; }
-        .blob-1 { width: 50vw; height: 50vw; background: #4f46e5; top: -10%; left: -10%; }
-        .blob-2 { width: 45vw; height: 45vw; background: #db2777; bottom: -10%; right: -10%; animation-delay: -5s; }
-        .blob-3 { width: 40vw; height: 40vw; background: #06b6d4; top: 30%; left: 30%; animation-delay: -10s; }
-
-        @keyframes float {
-            0% { transform: translate(0px, 0px) scale(1); }
-            33% { transform: translate(30px, -50px) scale(1.1); }
-            66% { transform: translate(-20px, 20px) scale(0.9); }
-            100% { transform: translate(0px, 0px) scale(1); }
+        h2 {
+            border-bottom: 2px solid #404249;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+            max-width: 600px;
         }
 
-        .container { max-width: 1400px; margin: 0 auto; position: relative; z-index: 10; }
-
-        @keyframes fadeUp {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
+        #diary-container {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            max-width: 600px;
         }
 
-        .card {
-            background: var(--card-bg);
-            backdrop-filter: blur(25px);
-            border: 1px solid rgba(255, 255, 255, 0.4);
-            border-radius: 32px;
-            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(255,255,255,0.3);
-            animation: fadeUp 0.5s ease forwards;
+        .diary-card {
+            background-color: #313338;
+            border-radius: 8px;
+            padding: 12px 15px;
+            display: flex;
+            align-items: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
         }
 
-        .auth-box { padding: 50px 40px; max-width: 440px; margin: 80px auto; text-align: center; }
-        h1 { font-size: 2rem; font-weight: 800; background: linear-gradient(to right, #1e293b, #4f46e5); -webkit-background-clip: text; color: transparent; margin-bottom: 8px; }
-        .subtitle { color: var(--text-muted); font-size: 1rem; font-weight: 500; margin-bottom: 30px; }
-
-        input, select {
-            width: 100%; padding: 16px 20px; margin: 8px 0; border: 2px solid #e2e8f0;
-            border-radius: 16px; font-size: 1rem; font-family: inherit; font-weight: 500;
-            background: rgba(248, 250, 252, 0.9); transition: all 0.3s;
+        .role-emoji {
+            width: 32px;
+            height: 32px;
+            object-fit: contain;
+            margin-right: 15px;
         }
-        input:focus, select:focus { outline: none; border-color: var(--primary); background: white; }
 
-        button { font-family: inherit; transition: all 0.2s; border: none; cursor: pointer; }
-        button:active { transform: scale(0.97); }
+        .user-info {
+            display: flex;
+            flex-direction: column;
+        }
 
-        .btn-primary { width: 100%; padding: 16px; background: linear-gradient(135deg, var(--primary), #6366f1); color: white; border-radius: 16px; font-weight: 700; font-size: 1.1rem; margin-top: 10px; box-shadow: 0 10px 20px -10px var(--primary); }
-        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 15px 25px -10px var(--primary); }
-        .btn-success { background: linear-gradient(135deg, var(--success), #34d399); color: white; padding: 16px 28px; border-radius: 16px; font-weight: 600; height: 56px; box-shadow: 0 10px 20px -10px var(--success); }
-        
-        .logout-btn { background: rgba(239, 68, 68, 0.1); color: var(--danger); padding: 14px; border-radius: 14px; font-weight: 600; width: 100%; margin-top: 15px; }
-        .admin-gear-btn { background: #f1f5f9; color: var(--text-main); border: 1px solid #cbd5e1; padding: 12px 24px; border-radius: 14px; font-weight: 600; width: 100%; margin-top: 10px; }
+        .user-login {
+            font-size: 16px;
+            font-weight: bold;
+        }
 
-        .error { color: var(--danger); margin-top: 12px; font-size: 0.9rem; font-weight: 600; min-height: 20px; }
-        .link-text { color: var(--primary); font-weight: 600; cursor: pointer; margin-top: 20px; display: inline-block; font-size: 0.95rem; }
+        .user-role {
+            font-size: 13px;
+            color: #b5bac1;
+            margin-top: 4px;
+        }
 
-        /* Журнал */
-        .main-panel { padding: 40px; }
-        .panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; padding-bottom: 20px; border-bottom: 2px solid var(--border-color); }
-        
-        .profile-section { position: relative; }
-        .avatar { width: 50px; height: 50px; background: linear-gradient(135deg, var(--primary), #6366f1); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; cursor: pointer; box-shadow: 0 5px 15px rgba(79, 70, 229, 0.4); }
-        .profile-dropdown { position: absolute; top: 60px; right: 0; background: white; border-radius: 20px; padding: 24px; min-width: 280px; z-index: 50; box-shadow: 0 15px 40px rgba(0,0,0,0.2); display: none; }
-        
-        .add-cadet-form { background: rgba(248, 250, 252, 0.6); border-radius: 24px; padding: 24px; margin-bottom: 30px; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; align-items: flex-end; border: 1px solid var(--border-color); }
-        
-        .table-controls { display: flex; justify-content: flex-end; margin-bottom: 15px; }
-        .search-cadet { padding: 12px 20px; border-radius: 12px; border: 2px solid #e2e8f0; width: 300px; background: rgba(255,255,255,0.8); font-weight: 500; }
+        .status-message {
+            color: #b5bac1;
+            font-style: italic;
+        }
 
-        .table-wrapper { overflow-x: auto; border-radius: 24px; border: 1px solid var(--border-color); background: rgba(255, 255, 255, 0.5); }
-        .grades-table { width: 100%; border-collapse: collapse; white-space: nowrap; }
-        .grades-table th { background: rgba(248, 250, 252, 0.8); color: var(--text-muted); font-weight: 700; text-transform: uppercase; font-size: 0.8rem; padding: 20px; text-align: left; }
-        .grades-table td { padding: 20px; border-top: 1px solid rgba(226, 232, 240, 0.5); }
+        /* --- ИНТЕРФЕЙС НАСТРОЕК (СПРАВА) --- */
 
-        .grades-list { display: flex; flex-wrap: wrap; gap: 6px; }
-        .grade-badge { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 10px; font-weight: 700; transition: transform 0.2s; }
-        .grade-badge:hover { transform: translateY(-2px); }
-        
-        .grade-5 { background: #dcfce7; color: #166534; } .grade-4 { background: #dbeafe; color: #1e40af; } .grade-3 { background: #fef08a; color: #854d0e; } .grade-2 { background: #fee2e2; color: #991b1b; } .grade-absent { background: #f1f5f9; color: #64748b; } .grade-task { background: #ffedd5; color: #c2410c; }
+        /* Круглая кнопка-триггер в правом углу */
+        .profile-trigger {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background-color: #35373c;
+            border: 2px solid #5865f2;
+            cursor: pointer;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            transition: transform 0.2s, background-color 0.2s;
+            z-index: 1000;
+        }
 
-        .grade-control { display: flex; gap: 8px; margin-top: 10px; }
-        .action-btn { width: 32px; height: 32px; border-radius: 8px; background: white; border: 1px solid #e2e8f0; font-weight: bold; cursor: pointer; }
-        .avg-pill { background: linear-gradient(135deg, #10b981, #059669); color: white; padding: 6px 14px; border-radius: 20px; font-weight: bold; }
+        .profile-trigger:hover {
+            transform: scale(1.05);
+            background-color: #404249;
+        }
 
-        .instruction-text { font-size: 0.75rem; color: var(--text-muted); margin-top: 25px; line-height: 1.5; font-weight: 500; }
-        
-        /* Модалки */
-        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(8px); display: none; align-items: center; justify-content: center; z-index: 1000; }
-        
-        .logs-container { max-height: 400px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 12px; background: white; }
-        .logs-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
-        .logs-table th { background: #f1f5f9; position: sticky; top: 0; padding: 12px; text-align: left; color: #64748b; font-weight: 700; z-index: 10; }
-        .logs-table td { padding: 12px; border-bottom: 1px solid #e2e8f0; }
+        .profile-trigger img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
 
-        .status { position: fixed; bottom: 20px; right: 20px; background: rgba(0,0,0,0.8); color: white; padding: 10px 20px; border-radius: 30px; font-size: 0.9rem; display: none; z-index: 9999; }
-        
-        .edit-icon { cursor: pointer; font-size: 1rem; opacity: 0.5; margin-left: 8px; transition: 0.2s; background: none; border: none; }
-        .edit-icon:hover { opacity: 1; transform: scale(1.1); }
+        /* Выпадающая панель настроек */
+        .settings-panel {
+            position: fixed;
+            top: 80px;
+            right: 20px;
+            width: 300px;
+            background-color: #1e1f22;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+            border: 1px solid #313338;
+            display: none; /* Скрыта по умолчанию */
+            z-index: 999;
+        }
+
+        /* Класс для открытия панели */
+        .settings-panel.active {
+            display: block;
+        }
+
+        .settings-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 18px;
+            font-weight: bold;
+            border-bottom: 1px solid #313338;
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+            color: #f2f3f5;
+        }
+
+        .settings-header .gear-icon {
+            font-size: 20px;
+            animation: spin 4s linear infinite;
+        }
+
+        @keyframes spin {
+            100% { transform: rotate(360deg); }
+        }
+
+        .settings-section h4 {
+            margin: 0 0 10px 0;
+            color: #949ba4;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* Зона изменения аватарки */
+        .avatar-upload-zone {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
+            background-color: #2b2d31;
+            padding: 15px;
+            border-radius: 8px;
+        }
+
+        .preview-avatar {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid #949ba4;
+        }
+
+        .upload-btn {
+            background-color: #5865f2;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+            transition: background-color 0.2s;
+        }
+
+        .upload-btn:hover {
+            background-color: #4752c4;
+        }
+
+        /* Блок информации (запрещен для редактирования) */
+        .read-only-info {
+            background-color: #2b2d31;
+            padding: 12px;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .info-field {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .info-label {
+            font-size: 11px;
+            color: #949ba4;
+            text-transform: uppercase;
+        }
+
+        .info-value {
+            font-size: 14px;
+            color: #f2f3f5;
+            font-weight: 500;
+            padding: 4px 0;
+        }
     </style>
 </head>
 <body>
 
-<div class="bg-blobs">
-    <div class="blob blob-1"></div>
-    <div class="blob blob-2"></div>
-    <div class="blob blob-3"></div>
-</div>
+    <button class="profile-trigger" id="profileTriggerBtn" onclick="toggleSettings()">
+        <img id="triggerAvatarImg" src="https://cdn-icons-png.flaticon.com/512/149/149071.png" alt="Аватар">
+    </button>
 
-<div class="container">
-    <div id="status" class="status">Обновлено</div>
-
-    <div id="authBlock" class="card auth-box">
-        <div style="font-size: 4rem; margin-bottom: 10px; text-shadow: 0 10px 20px rgba(0,0,0,0.1);">🏛️</div>
-        <h1>Академия</h1>
-        <div class="subtitle">Электронный журнал</div>
-        
-        <div id="loginView">
-            <input type="text" id="loginInput" placeholder="Логин">
-            <input type="password" id="passwordInput" placeholder="Пароль">
-            <button class="btn-primary" onclick="loginUser()">Войти</button>
-            <div id="loginError" class="error"></div>
-            <div class="link-text" onclick="toggleAuth('reg')">Нет аккаунта? Зарегистрироваться</div>
+    <div class="settings-panel" id="settingsPanel">
+        <div class="settings-header">
+            <span class="gear-icon">⚙️</span>
+            <span>Настройки</span>
         </div>
 
-        <div id="regView" style="display: none;">
-            <input type="text" id="regNameInput" placeholder="ФИО (напр: Иванов И.И.)">
-            <input type="text" id="regLoginInput" placeholder="Придумайте логин">
-            <input type="password" id="regPasswordInput" placeholder="Придумайте пароль">
-            <button class="btn-success" style="width: 100%; margin-top: 10px;" onclick="registerUser()">Создать аккаунт</button>
-            <div id="regError" class="error"></div>
-            <div class="link-text" onclick="toggleAuth('login')">Уже есть аккаунт? Войти</div>
-        </div>
-    </div>
+        <div class="settings-section">
+            <h4>Профиль</h4>
+            
+            <div class="avatar-upload-zone">
+                <img id="panelAvatarImg" class="preview-avatar" src="https://cdn-icons-png.flaticon.com/512/149/149071.png" alt="Просмотр">
+                <input type="file" id="avatarFileInput" accept="image/*" style="display: none;" onchange="changeAvatar(event)">
+                <button class="upload-btn" onclick="document.getElementById('avatarFileInput').click()">Сменить аватарку</button>
+            </div>
 
-    <div id="waitingBlock" class="card auth-box" style="display: none;">
-        <div style="font-size: 4rem; margin-bottom: 10px;">⏳</div>
-        <h2 style="color: #1e293b; margin-bottom: 10px;">Ожидание доступа</h2>
-        <div style="color: #64748b; font-weight: 500; font-size: 0.95rem;">Ваша должность еще не назначена.</div>
-        <button class="logout-btn" onclick="logout()" style="margin-top: 30px;">🚪 Выйти из аккаунта</button>
-        <div class="instruction-text">Вы должны отправить свой логин куратору факультета (или вышестоящему руководству), чтобы получить должность и доступ к журналу.</div>
-    </div>
-
-    <div id="mainBlock" class="card main-panel" style="display: none;">
-        <div class="panel-header">
-            <h1 style="margin:0; font-size:1.8rem;">📚 Журнал</h1>
-            <div class="profile-section">
-                <div class="avatar" id="avatarBtn">?</div>
-                <div class="profile-dropdown" id="profileMenu">
-                    <div id="profileName" style="font-weight: 800; color: #1e293b; font-size: 1.1rem;">Имя</div>
-                    <div id="profileRole" style="font-size: 0.85rem; color: var(--primary); font-weight: 700; margin-bottom: 15px;">Должность</div>
-                    <hr style="border:none; border-top: 1px solid var(--border-color); margin: 10px 0;">
-                    <button id="adminGearBtn" class="admin-gear-btn" style="display: none;" onclick="openAdminModal()">⚙️ Выдать должность</button>
-                    <button id="logsBtn" class="admin-gear-btn" style="display: none;" onclick="openLogsModal()">📜 Журнал действий</button>
-                    <button class="logout-btn" onclick="logout()">🚪 Выйти</button>
+            <h4>Информация (Только чтение)</h4>
+            <div class="read-only-info">
+                <div class="info-field">
+                    <span class="info-label">Ваш Логин</span>
+                    <span class="info-value" id="currentDbLogin">Загрузка...</span>
+                </div>
+                <div class="info-field">
+                    <span class="info-label">Текущая Должность</span>
+                    <span class="info-value" id="currentDbRole">Загрузка...</span>
                 </div>
             </div>
         </div>
-        
-        <div class="add-cadet-form" id="addCadetForm">
-            <div><div style="font-size:0.8rem; color:var(--text-muted); margin-bottom:5px; font-weight:bold;">Фамилия</div><input type="text" id="newSurname" placeholder="Иванов"></div>
-            <div><div style="font-size:0.8rem; color:var(--text-muted); margin-bottom:5px; font-weight:bold;">Имя</div><input type="text" id="newName" placeholder="Иван"></div>
-            <div><div style="font-size:0.8rem; color:var(--text-muted); margin-bottom:5px; font-weight:bold;">Отчество</div><input type="text" id="newPatronymic" placeholder="Иванович"></div>
-            <button class="btn-success" onclick="addCadet()">Зачислить</button>
-        </div>
-
-        <div class="table-controls">
-            <input type="text" id="searchCadetInput" class="search-cadet" placeholder="🔍 Поиск по фамилии..." oninput="renderTable()">
-        </div>
-
-        <div class="table-wrapper">
-            <table class="grades-table">
-                <thead id="tableHeader"><tr id="tableHeadRow"></tr></thead>
-                <tbody id="tableBody"></tbody>
-            </table>
-        </div>
     </div>
-</div>
 
-<div id="adminModal" class="modal-overlay">
-    <div class="card" style="padding: 30px; width: 90%; max-width: 400px; box-shadow: none;">
-        <h2 style="margin-bottom: 20px;">⚙️ Выдача должности</h2>
-        <input type="text" id="targetLogin" placeholder="Логин сотрудника">
-        <select id="targetRole" style="margin-bottom: 20px;">
-            <option value="Без должности">Без должности</option>
-            <option value="Курсант">Курсант</option>
-            <option value="Сотрудник ПК">Сотрудник ПК</option>
-            <option value="Руководитель ПК">Руководитель ПК</option>
-            <option value="Преподаватель">Преподаватель</option>
-            <option value="Заведующий">Заведующий</option>
-            <option value="Секретарь">Секретарь</option>
-            <option value="Куратор">Куратор</option>
-            <option value="Декан">Декан</option>
-            <option value="Проректор">Проректор</option>
-            <option value="Ректор">Ректор</option>
-            <option value="Советник">Советник</option>
-            <option value="Начальник академии">Начальник академии</option>
-        </select>
-        <button class="btn-primary" onclick="assignRole()">Назначить</button>
-        <button class="logout-btn" onclick="document.getElementById('adminModal').style.display='none'" style="background:none; color:var(--text-muted);">Отмена</button>
+    <h2>Список сотрудников и курсантов</h2>
+    <div id="diary-container">
+        <div class="status-message">Подключение к базе данных...</div>
     </div>
-</div>
 
-<div id="editCadetModal" class="modal-overlay">
-    <div class="card" style="padding: 30px; width: 90%; max-width: 400px; box-shadow: none;">
-        <h2 style="margin-bottom: 20px;">✏️ Редактирование курсанта</h2>
-        <input type="hidden" id="editCadetId">
-        <div style="font-size:0.8rem; color:var(--text-muted); font-weight:bold; margin-top:10px;">Фамилия</div>
-        <input type="text" id="editSurname">
-        <div style="font-size:0.8rem; color:var(--text-muted); font-weight:bold; margin-top:10px;">Имя</div>
-        <input type="text" id="editName">
-        <div style="font-size:0.8rem; color:var(--text-muted); font-weight:bold; margin-top:10px;">Отчество</div>
-        <button class="btn-primary" onclick="saveCadetEdit()">Сохранить</button>
-        <button class="logout-btn" onclick="document.getElementById('editCadetModal').style.display='none'" style="background:none; color:var(--text-muted);">Отмена</button>
-    </div>
-</div>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-<div id="logsModal" class="modal-overlay">
-    <div class="card" style="padding: 30px; width: 90%; max-width: 900px; box-shadow: none;">
-        <h2 style="margin-bottom: 15px;">📜 Журнал действий</h2>
-        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 15px;">Здесь отображаются последние действия руководителей.</p>
-        <div class="logs-container">
-            <table class="logs-table">
-                <thead><tr><th style="width: 130px;">Время</th><th style="width: 200px;">Пользователь</th><th>Действие</th></tr></thead>
-                <tbody id="logsTableBody"></tbody>
-            </table>
-        </div>
-        <button class="logout-btn" onclick="document.getElementById('logsModal').style.display='none'" style="background:none; color:var(--text-muted); margin-top: 15px;">Закрыть</button>
-    </div>
-</div>
+        // КОНФИГУРАЦИЯ FIREBASE (Вставь свои ключи сюда)
+        const firebaseConfig = {
+            apiKey: "ТВОЙ_API_KEY",
+            authDomain: "diary-6f282.firebaseapp.com",
+            databaseURL: "https://diary-6f282-default-rtdb.europe-west1.firebasedatabase.app",
+            projectId: "diary-6f282",
+            storageBucket: "diary-6f282.appspot.com",
+            messagingSenderId: "ТВОЙ_SENDER_ID",
+            appId: "ТВОЙ_APP_ID"
+        };
 
-<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
-<script>
-    const firebaseConfig = {
-        apiKey: "AIzaSyArg3bVR6kGDU6XoM74ljpLfBDQ-lC9m4Y",
-        authDomain: "diary-6f282.firebaseapp.com",
-        databaseURL: "https://diary-6f282-default-rtdb.europe-west1.firebasedatabase.app",
-        projectId: "diary-6f282",
-        storageBucket: "diary-6f282.firebasestorage.app",
-        messagingSenderId: "263486503788",
-        appId: "1:263486503788:web:bfd1ff03d4d3829dfd5149"
-    };
-    firebase.initializeApp(firebaseConfig);
-    const database = firebase.database();
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
 
-    const SUBJECTS = ["Военно-тактическая", "Русский язык", "Юридический"];
-    const ADMIN_ROLES = ["Руководитель ПК", "Куратор", "Декан", "Проректор", "Ректор", "Советник", "Начальник академии"];
-    const PROTECTED_LOGINS = ['kyz', 'per', 'teacher', 'medn123'];
+        const customEmojis = {
+            "Ректор": "./images/rector.png",
+            "Советник": "./images/advisor.png",
+            "Начальник академии": "./images/boss.png",
+            "Проректор": "./images/prorector.png",
+            "Декан": "./images/dean.png",
+            "Куратор": "./images/curator.png",
+            "Секретарь": "./images/secretary.png",
+            "Заведующий": "./images/manager.png",
+            "Преподаватель": "./images/teacher.png",
+            "Руководитель ПК": "./images/head_pc.png",
+            "Сотрудник ПК": "./images/staff_pc.png",
+            "Курсант": "./images/student.png"
+        };
 
-    const ROLE_HIERARCHY = {
-        "Без должности": 0,
-        "Курсант": 1,
-        "Сотрудник ПК": 2,
-        "Руководитель ПК": 3,
-        "Преподаватель": 4,
-        "Секретарь": 5,
-        "Заведующий": 6,
-        "Куратор": 7,
-        "Декан": 7, 
-        "Проректор": 8,
-        "Ректор": 9,
-        "Советник": 10,
-        "Начальник академии": 11
-    };
-
-    const ROLES_CAN_MANAGE_GRADES = ["Преподаватель", "Заведующий", "Секретарь", "Куратор", "Декан", "Проректор", "Ректор", "Советник", "Начальник академии"];
-    const ROLES_CAN_ADD_CADETS = ["Сотрудник ПК", ...ROLES_CAN_MANAGE_GRADES];
-
-    let currentLogin = null;
-    let currentUser = null;
-    let currentEditingCadetOldName = '';
-
-    function showStatus(msg) {
-        const el = document.getElementById('status');
-        el.textContent = msg; el.style.display = 'block';
-        setTimeout(() => el.style.display = 'none', 3000);
-    }
-
-    async function writeLog(actionText) {
-        const timeStr = new Date().toLocaleString('ru-RU');
-        const userStr = currentUser ? `${currentUser.name} (${currentLogin})` : 'Система';
-        await database.ref('logs').push({ 
-            time: timeStr, 
-            user: userStr, 
-            action: actionText, 
-            timestamp: firebase.database.ServerValue.TIMESTAMP 
-        });
-    }
-
-    function getCadetName(id) {
-        if (!window.cadetsData) return `ID: ${id}`;
-        const cadet = window.cadetsData.find(c => c.id === id);
-        return cadet ? `${cadet.surname} ${cadet.name}` : `ID: ${id}`;
-    }
-
-    function toggleAuth(mode) {
-        document.getElementById('loginError').innerText = '';
-        document.getElementById('regError').innerText = '';
-        document.getElementById('loginView').style.display = mode === 'login' ? 'block' : 'none';
-        document.getElementById('regView').style.display = mode === 'reg' ? 'block' : 'none';
-    }
-
-    function listenUserAccess(login) {
-        document.getElementById('authBlock').style.display = 'none';
-
-        database.ref(`users/${login}`).on('value', (snapshot) => {
-            const user = snapshot.val();
-            if (!user) { logout(); return; }
-            currentUser = user;
-            
-            // Если kyz или medn123 - это суперадмины
-            const isSuperAdmin = login === 'kyz' || login.toLowerCase() === 'medn123';
-            
-            // Суперадмины пропускают экран ожидания даже с ролью "Без должности"
-            if (user.role === 'Без должности' && !isSuperAdmin) {
-                document.getElementById('authBlock').style.display = 'none';
-                document.getElementById('mainBlock').style.display = 'none';
-                document.getElementById('waitingBlock').style.display = 'block';
-            } else {
-                document.getElementById('authBlock').style.display = 'none';
-                document.getElementById('waitingBlock').style.display = 'none';
-                document.getElementById('mainBlock').style.display = 'block';
-                setupProfile();
-                listenCadets(); 
-            }
-        });
-    }
-
-    async function loginUser() {
-        const login = document.getElementById('loginInput').value.trim();
-        const pwd = document.getElementById('passwordInput').value.trim();
-        if (login.toLowerCase() === 'teacher') return document.getElementById('loginError').innerText = 'Вход по общим логинам отключен.';
-        if(!login || !pwd) return;
-
-        const snap = await database.ref(`users/${login}`).once('value');
-        const user = snap.val();
-
-        if (user && user.pwd === pwd) {
-            currentLogin = login;
-            localStorage.setItem('academyLogin', login);
-            listenUserAccess(login); 
-        } else {
-            document.getElementById('loginError').innerText = 'Неверный логин или пароль';
-        }
-    }
-
-    async function registerUser() {
-        const name = document.getElementById('regNameInput').value.trim();
-        const login = document.getElementById('regLoginInput').value.trim();
-        const pwd = document.getElementById('regPasswordInput').value.trim();
-        const err = document.getElementById('regError');
-
-        if (!name || !login || !pwd) return err.innerText = 'Заполните все поля';
-        if (PROTECTED_LOGINS.includes(login.toLowerCase())) return err.innerText = 'Логин зарезервирован системой.';
-
-        const snap = await database.ref(`users/${login}`).once('value');
-        if (snap.exists()) return err.innerText = 'Логин уже занят';
-
-        await database.ref(`users/${login}`).set({ name, pwd, role: 'Без должности' });
-        await writeLog(`Зарегистрирован новый аккаунт: ${name} (логин: ${login})`);
+        const container = document.getElementById('diary-container');
+        const usersRef = ref(db, 'users');
         
-        showStatus('✅ Аккаунт создан');
-        toggleAuth('login');
-        document.getElementById('loginInput').value = login;
-        document.getElementById('passwordInput').value = pwd;
-    }
+        onValue(usersRef, (snapshot) => {
+            container.innerHTML = ''; 
 
-    function setupProfile() {
-        document.getElementById('profileName').innerText = currentUser.name;
-        document.getElementById('profileRole').innerText = currentUser.role;
-        document.getElementById('avatarBtn').innerText = currentUser.name.substring(0, 2).toUpperCase();
-        
-        const isSuperAdmin = currentLogin === 'kyz' || currentLogin.toLowerCase() === 'medn123';
-        const canAssign = ADMIN_ROLES.includes(currentUser.role) || isSuperAdmin;
-        
-        const canSeeLogs = ["Куратор", "Декан", "Проректор", "Ректор", "Советник", "Начальник академии"].includes(currentUser.role) || isSuperAdmin;
-        
-        document.getElementById('adminGearBtn').style.display = canAssign ? 'block' : 'none';
-        document.getElementById('logsBtn').style.display = canSeeLogs ? 'block' : 'none';
-    }
-
-    document.getElementById('avatarBtn').onclick = (e) => {
-        e.stopPropagation();
-        const menu = document.getElementById('profileMenu');
-        menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
-    };
-    window.onclick = () => document.getElementById('profileMenu').style.display = 'none';
-
-    function openAdminModal() {
-        document.getElementById('targetLogin').value = '';
-        document.getElementById('adminModal').style.display = 'flex';
-    }
-
-    async function assignRole() {
-        const targetLogin = document.getElementById('targetLogin').value.trim();
-        const newRole = document.getElementById('targetRole').value;
-        
-        if (!targetLogin) return;
-        
-        const isSuperAdmin = currentLogin === 'kyz' || currentLogin.toLowerCase() === 'medn123';
-        
-        // Блокируем смену должности самому себе для всех, КРОМЕ суперадминов (kyz / medn123)
-        if (targetLogin === currentLogin && !isSuperAdmin) { 
-            showStatus('❌ Нельзя изменить должность себе'); 
-            return; 
-        }
-
-        const snap = await database.ref(`users/${targetLogin}`).once('value');
-        const targetUser = snap.val();
-
-        if (!targetUser) { showStatus('❌ Пользователь не найден'); return; }
-
-        // ОГРАНИЧЕНИЯ ДЛЯ РУКОВОДИТЕЛЯ ПК (суперадмины игнорируют)
-        if (currentUser.role === 'Руководитель ПК' && !isSuperAdmin) {
-            if (newRole !== 'Сотрудник ПК' && newRole !== 'Без должности') {
-                showStatus('❌ Вы можете выдавать/снимать только должность «Сотрудник ПК»');
+            if (!snapshot.exists()) {
+                container.innerHTML = '<div class="status-message">База данных пуста или нет доступа.</div>';
                 return;
             }
-            if (targetUser.role !== 'Сотрудник ПК' && targetUser.role !== 'Без должности') {
-                showStatus('❌ Вы не имеете права изменять должность этому сотруднику');
-                return;
+
+            let isFirst = true;
+
+            snapshot.forEach((childSnapshot) => {
+                const login = childSnapshot.key;
+                const userData = childSnapshot.val();
+                const role = userData.role || "Без должности";
+                
+                const iconSrc = customEmojis[role] || "https://cdn-icons-png.flaticon.com/512/847/847969.png";
+
+                // ДЛЯ ДЕМОНСТРАЦИИ: берем первого попавшегося пользователя из базы 
+                // и отображаем его данные в блоке информации "Только чтение" справа
+                if (isFirst) {
+                    document.getElementById('currentDbLogin').innerText = login;
+                    document.getElementById('currentDbRole').innerText = role;
+                    isFirst = false;
+                }
+
+                const cardHtml = `
+                    <div class="diary-card">
+                        <img src="${iconSrc}" alt="${role}" class="role-emoji" title="${role}">
+                        <div class="user-info">
+                            <span class="user-login">${login}</span>
+                            <span class="user-role">${role}</span>
+                        </div>
+                    </div>
+                `;
+                container.innerHTML += cardHtml;
+            });
+        }, (error) => {
+            console.error(error);
+            container.innerHTML = `<div class="status-message" style="color: #da373c;">Ошибка доступа к базе данных.</div>`;
+        });
+    </script>
+
+    <script>
+        // Открытие/закрытие панели настроек при клике на кружок
+        function toggleSettings() {
+            const panel = document.getElementById('settingsPanel');
+            panel.classList.toggle('active');
+        }
+
+        // Закрытие панели при клике мимо неё
+        window.addEventListener('click', function(e) {
+            const panel = document.getElementById('settingsPanel');
+            const trigger = document.getElementById('profileTriggerBtn');
+            if (!panel.contains(e.target) && !trigger.contains(e.target)) {
+                panel.classList.remove('active');
+            }
+        });
+
+        // Функция обработки и сохранения аватарки в localStorage
+        function changeAvatar(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const base64Image = e.target.result;
+                    
+                    // Сохраняем в память браузера
+                    localStorage.setItem('userAvatar', base64Image);
+                    
+                    // Обновляем картинки на странице
+                    document.getElementById('triggerAvatarImg').src = base64Image;
+                    document.getElementById('panelAvatarImg').src = base64Image;
+                }
+                reader.readAsDataURL(file);
             }
         }
 
-        // Проверка обычной иерархии должностей (суперадмины игнорируют)
-        if (!isSuperAdmin && currentUser.role !== 'Руководитель ПК') {
-            const myRank = ROLE_HIERARCHY[currentUser.role] || 0;
-            const targetRoleRank = ROLE_HIERARCHY[newRole] || 0;
-            const targetCurrentRank = ROLE_HIERARCHY[targetUser.role] || 0;
-
-            if (myRank <= targetRoleRank) { showStatus('❌ Недостаточно прав для этой должности'); return; }
-            if (myRank <= targetCurrentRank && targetCurrentRank !== 0) { showStatus('❌ Нельзя менять должность сотруднику вашего уровня'); return; }
-        }
-
-        await database.ref(`users/${targetLogin}/role`).set(newRole);
-        await writeLog(`Выдал должность «${newRole}» пользователю ${targetLogin}`);
-        
-        document.getElementById('adminModal').style.display = 'none';
-        showStatus('✅ Должность обновлена');
-    }
-
-    function openLogsModal() {
-        document.getElementById('logsModal').style.display = 'flex';
-        const tbody = document.getElementById('logsTableBody');
-        tbody.innerHTML = '<tr><td colspan="3" style="text-align:center; color: #64748b;">Загрузка логов...</td></tr>';
-
-        database.ref('logs').limitToLast(100).once('value', (snap) => {
-            tbody.innerHTML = '';
-            if (!snap.exists()) return tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;">Записей пока нет</td></tr>';
-            
-            let logsArray = [];
-            snap.forEach(child => {
-                logsArray.push(child.val());
-            });
-            
-            logsArray.reverse().forEach(log => {
-                tbody.innerHTML += `<tr><td style="color:#64748b; font-size:0.8rem;">${log.time || '—'}</td><td><b>${log.user || 'Система'}</b></td><td>${log.action || ''}</td></tr>`;
-            });
+        // При загрузке страницы проверяем, сохранял ли пользователь аватарку ранее
+        window.addEventListener('DOMContentLoaded', () => {
+            const savedAvatar = localStorage.getItem('userAvatar');
+            if (savedAvatar) {
+                document.getElementById('triggerAvatarImg').src = savedAvatar;
+                document.getElementById('panelAvatarImg').src = savedAvatar;
+            }
         });
-    }
+    </script>
 
-    function logout() { 
-        localStorage.removeItem('academyLogin');
-        location.reload(); 
-    }
-
-    function listenCadets() {
-        database.ref('cadets').on('value', (snap) => {
-            window.cadetsData = snap.val() ? Object.values(snap.val()) : [];
-            renderTable();
-        });
-    }
-
-    async function addCadet() {
-        const isSuperAdmin = currentLogin === 'kyz' || currentLogin.toLowerCase() === 'medn123';
-        if (!ROLES_CAN_ADD_CADETS.includes(currentUser.role) && !isSuperAdmin) return; 
-
-        const surname = document.getElementById('newSurname').value.trim();
-        const name = document.getElementById('newName').value.trim();
-        const pat = document.getElementById('newPatronymic').value.trim();
-        if (surname && name && pat) {
-            const id = Date.now().toString();
-            await database.ref(`cadets/${id}`).set({ id, surname, name, patronymic: pat });
-            await writeLog(`Зачислил курсанта: ${surname} ${name} ${pat}`);
-            document.getElementById('newSurname').value = ''; document.getElementById('newName').value = ''; document.getElementById('newPatronymic').value = '';
-            showStatus('✅ Зачислен');
-        }
-    }
-
-    function openEditCadet(id) {
-        const isSuperAdmin = currentLogin === 'kyz' || currentLogin.toLowerCase() === 'medn123';
-        if (!ROLES_CAN_MANAGE_GRADES.includes(currentUser.role) && !isSuperAdmin) return;
-
-        const cadet = window.cadetsData.find(c => c.id === id);
-        if (!cadet) return;
-        document.getElementById('editCadetId').value = cadet.id;
-        document.getElementById('editSurname').value = cadet.surname;
-        document.getElementById('editName').value = cadet.name;
-        document.getElementById('editPatronymic').value = cadet.patronymic;
-        currentEditingCadetOldName = `${cadet.surname} ${cadet.name} ${cadet.patronymic}`;
-        document.getElementById('editCadetModal').style.display = 'flex';
-    }
-
-    async function saveCadetEdit() {
-        const isSuperAdmin = currentLogin === 'kyz' || currentLogin.toLowerCase() === 'medn123';
-        if (!ROLES_CAN_MANAGE_GRADES.includes(currentUser.role) && !isSuperAdmin) return;
-
-        const id = document.getElementById('editCadetId').value;
-        const surname = document.getElementById('editSurname').value.trim();
-        const name = document.getElementById('editName').value.trim();
-        const pat = document.getElementById('editPatronymic').value.trim();
-        if (!surname || !name || !pat) return;
-        await database.ref(`cadets/${id}`).update({ surname, name, patronymic: pat });
-        await writeLog(`Изменил ФИО курсанта: ${currentEditingCadetOldName} ➔ ${surname} ${name} ${pat}`);
-        document.getElementById('editCadetModal').style.display = 'none';
-        showStatus('✅ Данные обновлены');
-    }
-
-    window.delCadet = async (id) => { 
-        const isSuperAdmin = currentLogin === 'kyz' || currentLogin.toLowerCase() === 'medn123';
-        if (!ROLES_CAN_MANAGE_GRADES.includes(currentUser.role) && !isSuperAdmin) return;
-
-        await writeLog(`Отчислил курсанта: ${getCadetName(id)}`);
-        await database.ref(`cadets/${id}`).remove();
-    };
-    
-    window.addMark = async (id, subj, mark) => { 
-        const isSuperAdmin = currentLogin === 'kyz' || currentLogin.toLowerCase() === 'medn123';
-        if (!ROLES_CAN_MANAGE_GRADES.includes(currentUser.role) && !isSuperAdmin) return;
-
-        const r=database.ref(`cadets/${id}/grades/${subj}`); 
-        const m=(await r.once('value')).val()||[]; 
-        m.push(mark); await r.set(m); 
-        await writeLog(`Оценка «${mark}» по предмету «${subj}» курсанту: ${getCadetName(id)}`);
-    };
-    
-    window.delMark = async (id, subj, i) => { 
-        const isSuperAdmin = currentLogin === 'kyz' || currentLogin.toLowerCase() === 'medn123';
-        if (!ROLES_CAN_MANAGE_GRADES.includes(currentUser.role) && !isSuperAdmin) return;
-
-        const r=database.ref(`cadets/${id}/grades/${subj}`); 
-        const m=(await r.once('value')).val()||[]; 
-        if(m[i]){ 
-            const deletedMark = m[i]; m.splice(i,1); await r.set(m); 
-            await writeLog(`Удалил оценку «${deletedMark}» по предмету «${subj}» у курсанта: ${getCadetName(id)}`);
-        }
-    };
-
-    function getMarkClass(m) { return m==='5'?'grade-5':m==='4'?'grade-4':m==='3'?'grade-3':m==='2'?'grade-2':m==='н'?'grade-absent':m==='о'?'grade-task':''; }
-
-    function renderTable() {
-        const tbody = document.getElementById('tableBody');
-        const isSuperAdmin = currentLogin === 'kyz' || currentLogin.toLowerCase() === 'medn123';
-        
-        const canManageGrades = ROLES_CAN_MANAGE_GRADES.includes(currentUser.role) || isSuperAdmin;
-        const canAddCadets = ROLES_CAN_ADD_CADETS.includes(currentUser.role) || isSuperAdmin;
-
-        document.getElementById('addCadetForm').style.display = canAddCadets ? 'grid' : 'none';
-        
-        document.getElementById('tableHeadRow').innerHTML = `<th>Курсант</th><th>Военно-тактическая</th><th>Русский язык</th><th>Юридический</th><th style="text-align:center;">Средний балл</th>${canManageGrades ? '<th style="text-align:center;">Удалить</th>' : ''}`;
-        
-        let cadets = window.cadetsData || [];
-        const searchQuery = document.getElementById('searchCadetInput').value.toLowerCase().trim();
-        if (searchQuery) cadets = cadets.filter(c => c.surname.toLowerCase().includes(searchQuery));
-        
-        if (!cadets.length) return tbody.innerHTML = `<tr><td colspan="${canManageGrades ? 6 : 5}" style="text-align:center; padding:40px;">Курсанты не найдены</td></tr>`;
-        
-        tbody.innerHTML = '';
-        cadets.forEach(cadet => {
-            const isInitials = cadet.name.length <= 2 && cadet.patronymic.length <= 2;
-            const editBtnHtml = canManageGrades ? `<button class="edit-icon" onclick="openEditCadet('${cadet.id}')">✏️</button>` : '';
-            const nameDisplay = isInitials 
-                ? `<div style="display:flex; align-items:center;"><b>${cadet.surname} ${cadet.name} ${cadet.patronymic}</b> ${editBtnHtml}</div>` 
-                : `<div style="display:flex; align-items:center;"><b>${cadet.surname}</b> ${editBtnHtml}</div><div style="font-size:0.8rem;color:#64748b; margin-top:2px;">${cadet.name} ${cadet.patronymic}</div>`;
-            let tr = `<tr><td>${nameDisplay}</td>`;
-            let allMarks = [];
-            
-            SUBJECTS.forEach(subj => {
-                const marks = (cadet.grades || {})[subj] || [];
-                allMarks.push(...marks);
-                let marksHtml = marks.map((m, i) => `<span class="grade-badge ${getMarkClass(m)}" ${canManageGrades?'onclick="delMark(\''+cadet.id+'\',\''+subj+'\','+i+')"':''} style="${canManageGrades?'cursor:pointer;':'cursor:default; transform:none;'}">${m}</span>`).join('');
-                let controlHtml = canManageGrades ? `<div class="grade-control"><select id="sel_${cadet.id}_${subj}" style="width:auto; padding:4px; border:1px solid #e2e8f0; border-radius:8px;"><option>5</option><option>4</option><option>3</option><option>2</option><option>н</option><option>о</option></select><button class="action-btn" onclick="addMark('${cadet.id}','${subj}', document.getElementById('sel_${cadet.id}_${subj}').value)">+</button></div>` : '';
-                tr += `<td><div class="grades-list">${marksHtml}</div>${controlHtml}</td>`;
-            });
-            const nums = allMarks.map(m => parseInt(m)).filter(n => !isNaN(n));
-            const avg = nums.length ? (nums.reduce((a,b)=>a+b,0)/nums.length).toFixed(1) : "—";
-            tr += `<td style="text-align:center"><span class="avg-pill" style="${avg!=='—'&&avg<3.5?'background:linear-gradient(135deg, #f59e0b, #d97706);':''} ${avg!=='—'&&avg<2.5?'background:linear-gradient(135deg, #ef4444, #dc2626);':''}">${avg}</span></td>`;
-            if (canManageGrades) tr += `<td style="text-align:center"><button class="action-btn" style="color:red; border:none; font-size:1.2rem;" onclick="delCadet('${cadet.id}')">🗑️</button></td>`;
-            tr += `</tr>`;
-            tbody.innerHTML += tr;
-        });
-    }
-
-    // АВТОВХОД ПРИ ЗАГРУЗКЕ СТРАНИЦЫ
-    window.onload = () => {
-        const savedLogin = localStorage.getItem('academyLogin');
-        if (savedLogin) {
-            currentLogin = savedLogin;
-            listenUserAccess(savedLogin);
-        }
-    };
-</script>
 </body>
 </html>

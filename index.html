@@ -2,633 +2,625 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Электронный дневник — Академия</title>
-    
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Электронный Журнал Академии</title>
     <style>
         :root {
-            --primary: #4f46e5; --primary-hover: #4338ca;
-            --success: #10b981; --danger: #ef4444;
-            --text-main: #1e293b; --text-muted: #64748b;
-            --border-color: rgba(226, 232, 240, 0.6);
-            --card-bg: rgba(255, 255, 255, 0.85);
+            --bg-gradient: linear-gradient(135deg, #110c29 0%, #1c1236 50%, #3a1235 100%);
+            --panel-bg: rgba(240, 242, 247, 0.96);
+            --text-main: #2b2d31;
+            --text-muted: #7c828d;
+            --accent-green: #2bcc83;
+            --accent-green-hover: #24b574;
+            --accent-blue: #5865f2;
+            --border-color: #e3e5e8;
+            --input-bg: #f2f3f5;
         }
 
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
         body {
-            font-family: 'Inter', system-ui, sans-serif;
-            color: var(--text-main);
+            background: var(--bg-gradient);
             min-height: 100vh;
-            padding: 40px 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 50px 20px;
+        }
+
+        /* --- ОСНОВНАЯ ПАНЕЛЬ ЖУРНАЛА --- */
+        .journal-container {
+            background: var(--panel-bg);
+            width: 100%;
+            max-width: 1600px;
+            border-radius: 30px;
+            padding: 45px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
             position: relative;
-            overflow-x: hidden;
-            background: #0f172a;
+            max-height: 90vh;
+            overflow-y: auto;
         }
 
-        /* Анимированный фон */
-        .bg-blobs { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: -1; overflow: hidden; pointer-events: none; }
-        .blob { position: absolute; border-radius: 50%; filter: blur(90px); opacity: 0.6; animation: float 20s infinite ease-in-out alternate; }
-        .blob-1 { width: 50vw; height: 50vw; background: #4f46e5; top: -10%; left: -10%; }
-        .blob-2 { width: 45vw; height: 45vw; background: #db2777; bottom: -10%; right: -10%; animation-delay: -5s; }
-        .blob-3 { width: 40vw; height: 40vw; background: #06b6d4; top: 30%; left: 30%; animation-delay: -10s; }
+        .journal-container::-webkit-scrollbar { width: 12px; }
+        .journal-container::-webkit-scrollbar-track { background: transparent; margin: 20px 0; }
+        .journal-container::-webkit-scrollbar-thumb {
+            background: #d4d7dc;
+            border-radius: 10px;
+            border: 3px solid var(--panel-bg);
+        }
+        .journal-container::-webkit-scrollbar-thumb:hover { background: #b9bcc3; }
 
-        @keyframes float {
-            0% { transform: translate(0px, 0px) scale(1); }
-            33% { transform: translate(30px, -50px) scale(1.1); }
-            66% { transform: translate(-20px, 20px) scale(0.9); }
-            100% { transform: translate(0px, 0px) scale(1); }
+        /* Шапка журнала */
+        .journal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 40px;
         }
 
-        .container { max-width: 1400px; margin: 0 auto; position: relative; z-index: 10; }
-
-        @keyframes fadeUp {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
+        .journal-title {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            font-size: 34px;
+            font-weight: 800;
+            color: #3f429f;
         }
 
-        .card {
-            background: var(--card-bg);
-            backdrop-filter: blur(25px);
-            border: 1px solid rgba(255, 255, 255, 0.4);
-            border-radius: 32px;
-            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(255,255,255,0.3);
-            animation: fadeUp 0.5s ease forwards;
+        .journal-title svg { width: 36px; height: 36px; fill: #3f429f; }
+
+        /* --- ПРОФИЛЬ (БЕЗ ВЫХОДА) --- */
+        .profile-wrapper { position: relative; }
+        .profile-trigger {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background-color: var(--accent-blue);
+            color: #ffffff;
+            font-weight: bold;
+            font-size: 20px;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 10px rgba(88, 101, 242, 0.4);
+            transition: transform 0.2s ease;
         }
+        .profile-trigger:hover { transform: scale(1.05); }
 
-        .auth-box { padding: 50px 40px; max-width: 440px; margin: 80px auto; text-align: center; }
-        h1 { font-size: 2rem; font-weight: 800; background: linear-gradient(to right, #1e293b, #4f46e5); -webkit-background-clip: text; color: transparent; margin-bottom: 8px; }
-        .subtitle { color: var(--text-muted); font-size: 1rem; font-weight: 500; margin-bottom: 30px; }
-
-        input, select {
-            width: 100%; padding: 16px 20px; margin: 8px 0; border: 2px solid #e2e8f0;
-            border-radius: 16px; font-size: 1rem; font-family: inherit; font-weight: 500;
-            background: rgba(248, 250, 252, 0.9); transition: all 0.3s;
+        .settings-panel {
+            position: absolute;
+            top: 75px;
+            right: 0;
+            width: 320px;
+            background: #ffffff;
+            border-radius: 16px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+            border: 1px solid var(--border-color);
+            display: none;
+            z-index: 200;
         }
-        input:focus, select:focus { outline: none; border-color: var(--primary); background: white; }
+        .settings-panel.active { display: block; }
+        .settings-title { font-size: 20px; font-weight: 700; margin-bottom: 20px; color: var(--text-main); }
+        .settings-field { margin-top: 15px; background: var(--input-bg); padding: 15px; border-radius: 10px; }
+        .settings-label { font-size: 12px; color: var(--text-muted); text-transform: uppercase; font-weight: 700; }
+        .settings-value { font-size: 18px; color: var(--text-main); font-weight: 600; margin-top: 4px; }
 
-        button { font-family: inherit; transition: all 0.2s; border: none; cursor: pointer; }
-        button:active { transform: scale(0.97); }
+        /* --- ПАНЕЛЬ АДМИНА --- */
+        .admin-panel {
+            background: rgba(88, 101, 242, 0.08);
+            border: 2px dashed var(--accent-blue);
+            padding: 25px;
+            border-radius: 20px;
+            margin-bottom: 30px;
+            display: none;
+        }
+        .admin-title { font-size: 18px; font-weight: 800; color: var(--accent-blue); margin-bottom: 15px; display: flex; align-items: center; gap: 10px; }
+        .admin-form { display: grid; grid-template-columns: 1fr 1fr auto; gap: 20px; align-items: flex-end; }
+        .styled-select {
+            background: #ffffff; border: 1px solid var(--border-color); padding: 16px 20px;
+            border-radius: 12px; font-size: 16px; color: var(--text-main); outline: none; width: 100%; cursor: pointer;
+        }
+        .btn-admin {
+            background: var(--accent-blue); color: white; border: none; padding: 16px 35px;
+            border-radius: 12px; font-weight: 700; font-size: 16px; cursor: pointer; transition: background 0.2s;
+        }
+        .btn-admin:hover { background: #4752c4; }
 
-        .btn-primary { width: 100%; padding: 16px; background: linear-gradient(135deg, var(--primary), #6366f1); color: white; border-radius: 16px; font-weight: 700; font-size: 1.1rem; margin-top: 10px; box-shadow: 0 10px 20px -10px var(--primary); }
-        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 15px 25px -10px var(--primary); }
-        .btn-success { background: linear-gradient(135deg, var(--success), #34d399); color: white; padding: 16px 28px; border-radius: 16px; font-weight: 600; height: 56px; box-shadow: 0 10px 20px -10px var(--success); }
+        /* --- ФОРМА ЗАЧИСЛЕНИЯ --- */
+        .enrollment-form {
+            display: grid; grid-template-columns: repeat(3, 1fr) auto; gap: 20px;
+            background: rgba(255, 255, 255, 0.6); padding: 25px; border-radius: 20px; margin-bottom: 30px; align-items: flex-end;
+        }
+        .input-group { display: flex; flex-direction: column; gap: 8px; }
+        .input-group label { font-size: 15px; font-weight: 700; color: var(--text-muted); }
+        .input-group input {
+            background: #ffffff; border: 1px solid var(--border-color); padding: 16px 20px;
+            border-radius: 12px; font-size: 16px; color: var(--text-main); outline: none; transition: border-color 0.2s;
+        }
+        .input-group input:focus { border-color: var(--accent-blue); }
+        .btn-enroll {
+            background: var(--accent-green); color: white; border: none; padding: 16px 35px;
+            border-radius: 12px; font-weight: 700; font-size: 16px; cursor: pointer; transition: background 0.2s;
+        }
+        .btn-enroll:hover { background: var(--accent-green-hover); }
+
+        /* --- ПОИСК --- */
+        .search-container { display: flex; justify-content: flex-end; margin-bottom: 25px; }
+        .search-box { position: relative; width: 320px; }
+        .search-box input {
+            width: 100%; padding: 14px 20px 14px 45px; border-radius: 12px;
+            border: 1px solid var(--border-color); background: #ffffff; font-size: 16px; outline: none;
+        }
+        .search-box::before { content: "🔍"; position: absolute; left: 16px; top: 50%; transform: translateY(-50%); font-size: 16px; color: var(--text-muted); }
+
+        /* --- ТАБЛИЦА --- */
+        .table-wrapper {
+            background: #ffffff; border-radius: 20px; overflow: visible; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.02); padding-bottom: 120px; 
+        }
+        .journal-table { width: 100%; border-collapse: collapse; text-align: left; }
+        .journal-table th {
+            background: #ffffff; color: var(--text-muted); font-size: 14px; font-weight: 700;
+            text-transform: uppercase; padding: 22px 25px; border-bottom: 1px solid var(--border-color);
+        }
+        .journal-table td { padding: 20px 25px; border-bottom: 1px solid #f2f3f5; vertical-align: middle; }
         
-        .logout-btn { background: rgba(239, 68, 68, 0.1); color: var(--danger); padding: 14px; border-radius: 14px; font-weight: 600; width: 100%; margin-top: 15px; }
-        .admin-gear-btn { background: #f1f5f9; color: var(--text-main); border: 1px solid #cbd5e1; padding: 12px 24px; border-radius: 14px; font-weight: 600; width: 100%; margin-top: 10px; }
+        th.editable-subject-th {
+            color: #3f429f; outline: none; transition: background 0.2s; border-radius: 8px;
+        }
+        th.editable-subject-th:hover { background: rgba(88, 101, 242, 0.05); }
+        th.editable-subject-th:focus { background: rgba(88, 101, 242, 0.1); border-bottom: 2px solid var(--accent-blue); }
 
-        .error { color: var(--danger); margin-top: 12px; font-size: 0.9rem; font-weight: 600; min-height: 20px; }
-        .link-text { color: var(--primary); font-weight: 600; cursor: pointer; margin-top: 20px; display: inline-block; font-size: 0.95rem; }
+        .cadet-header-cell { display: flex; align-items: center; justify-content: space-between; width: 100%; }
+        .subject-controls { display: none; gap: 8px; }
+        .btn-subject-control {
+            width: 30px; height: 30px; border-radius: 8px; border: none; font-size: 18px;
+            font-weight: bold; color: white; cursor: pointer; display: flex; align-items: center; justify-content: center;
+        }
+        .btn-subject-add { background: var(--accent-blue); }
+        .btn-subject-remove { background: #ed4245; }
 
-        /* Журнал */
-        .main-panel { padding: 40px; }
-        .panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; padding-bottom: 20px; border-bottom: 2px solid var(--border-color); }
-        
-        .profile-section { position: relative; }
-        .avatar { width: 50px; height: 50px; background: linear-gradient(135deg, var(--primary), #6366f1); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; cursor: pointer; box-shadow: 0 5px 15px rgba(79, 70, 229, 0.4); }
-        .profile-dropdown { position: absolute; top: 60px; right: 0; background: white; border-radius: 20px; padding: 24px; min-width: 280px; z-index: 50; box-shadow: 0 15px 40px rgba(0,0,0,0.2); display: none; }
-        
-        .add-cadet-form { background: rgba(248, 250, 252, 0.6); border-radius: 24px; padding: 24px; margin-bottom: 30px; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; align-items: flex-end; border: 1px solid var(--border-color); }
-        
-        .table-controls { display: flex; justify-content: flex-end; margin-bottom: 15px; }
-        .search-cadet { padding: 12px 20px; border-radius: 12px; border: 2px solid #e2e8f0; width: 300px; background: rgba(255,255,255,0.8); font-weight: 500; }
+        .cadet-surname { font-weight: 700; color: var(--text-main); font-size: 18px; }
+        .cadet-fullname { font-size: 15px; color: var(--text-muted); margin-top: 4px; }
 
-        .table-wrapper { overflow-x: auto; border-radius: 24px; border: 1px solid var(--border-color); background: rgba(255, 255, 255, 0.5); }
-        .grades-table { width: 100%; border-collapse: collapse; white-space: nowrap; }
-        .grades-table th { background: rgba(248, 250, 252, 0.8); color: var(--text-muted); font-weight: 700; text-transform: uppercase; font-size: 0.8rem; padding: 20px; text-align: left; }
-        .grades-table td { padding: 20px; border-top: 1px solid rgba(226, 232, 240, 0.5); }
-
-        .grades-list { display: flex; flex-wrap: wrap; gap: 6px; }
-        .grade-badge { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 10px; font-weight: 700; transition: transform 0.2s; }
-        .grade-badge:hover { transform: translateY(-2px); }
+        /* --- ВЫСТАВЛЕНИЕ И ОТОБРАЖЕНИЕ ОЦЕНОК --- */
+        .grade-cell-wrapper { display: flex; flex-direction: column; gap: 10px; }
+        .grades-history { display: flex; gap: 6px; flex-wrap: wrap; min-height: 28px; align-items: center; }
         
-        .grade-5 { background: #dcfce7; color: #166534; } .grade-4 { background: #dbeafe; color: #1e40af; } .grade-3 { background: #fef08a; color: #854d0e; } .grade-2 { background: #fee2e2; color: #991b1b; } .grade-absent { background: #f1f5f9; color: #64748b; } .grade-task { background: #ffedd5; color: #c2410c; }
+        .single-grade {
+            display: inline-flex; align-items: center; justify-content: center;
+            width: 28px; height: 28px; border-radius: 8px; font-weight: 800; font-size: 14px; color: white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .single-grade.g5 { background: var(--accent-green); }
+        .single-grade.g4 { background: var(--accent-blue); }
+        .single-grade.g3 { background: #faa81a; }
+        .single-grade.g2 { background: #ed4245; }
 
-        .grade-control { display: flex; gap: 8px; margin-top: 10px; }
-        .action-btn { width: 32px; height: 32px; border-radius: 8px; background: white; border: 1px solid #e2e8f0; font-weight: bold; cursor: pointer; }
-        .avg-pill { background: linear-gradient(135deg, #10b981, #059669); color: white; padding: 6px 14px; border-radius: 20px; font-weight: bold; }
+        .grade-control-block { display: flex; align-items: center; gap: 8px; }
+        .custom-select-container { position: relative; width: 65px; user-select: none; }
+        
+        .custom-select-trigger {
+            background: #ffffff; border: 1px solid var(--border-color); border-radius: 10px;
+            padding: 8px 12px; display: flex; justify-content: space-between; align-items: center;
+            cursor: pointer; font-weight: 700; color: var(--text-main); font-size: 16px;
+        }
+        .custom-select-trigger:hover { border-color: var(--accent-green); }
+        .custom-select-container.open .arrow { transform: rotate(180deg); }
 
-        .instruction-text { font-size: 0.75rem; color: var(--text-muted); margin-top: 25px; line-height: 1.5; font-weight: 500; }
-        
-        /* Модалки */
-        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(8px); display: none; align-items: center; justify-content: center; z-index: 1000; }
-        
-        .logs-container { max-height: 400px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 12px; background: white; }
-        .logs-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
-        .logs-table th { background: #f1f5f9; position: sticky; top: 0; padding: 12px; text-align: left; color: #64748b; font-weight: 700; z-index: 10; }
-        .logs-table td { padding: 12px; border-bottom: 1px solid #e2e8f0; }
+        .custom-options-dropdown {
+            position: absolute; top: 115%; left: 0; right: 0; background: #ffffff;
+            border: 1px solid var(--border-color); border-radius: 10px; box-shadow: 0 6px 20px rgba(0,0,0,0.1);
+            list-style: none; padding: 6px; margin: 0; display: none; z-index: 100; 
+        }
+        .custom-select-container.open .custom-options-dropdown { display: block; }
+        .custom-options-dropdown li {
+            padding: 8px; border-radius: 6px; cursor: pointer; text-align: center;
+            font-weight: 700; font-size: 15px; color: #4f545c;
+        }
+        .custom-options-dropdown li:hover { background: #f2f3f5; color: var(--accent-green); }
 
-        .status { position: fixed; bottom: 20px; right: 20px; background: rgba(0,0,0,0.8); color: white; padding: 10px 20px; border-radius: 30px; font-size: 0.9rem; display: none; z-index: 9999; }
-        
-        .edit-icon { cursor: pointer; font-size: 1rem; opacity: 0.5; margin-left: 8px; transition: 0.2s; background: none; border: none; }
-        .edit-icon:hover { opacity: 1; transform: scale(1.1); }
+        .btn-add-grade {
+            background: #ffffff; border: 1px solid var(--border-color); border-radius: 10px;
+            width: 38px; height: 38px; display: flex; align-items: center; justify-content: center;
+            cursor: pointer; color: var(--text-muted); font-weight: bold; font-size: 20px; transition: all 0.2s;
+        }
+        .btn-add-grade:hover { border-color: var(--accent-green); color: var(--accent-green); }
+
+        .average-badge {
+            width: 44px; height: 44px; background: #7c828d; color: white;
+            border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            font-weight: 800; font-size: 16px; box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+        }
+        .average-badge.good { background: var(--accent-green); }
+
+        .btn-delete { background: none; border: none; cursor: pointer; padding: 8px; opacity: 0.4; }
+        .btn-delete:hover { opacity: 1; }
+        .btn-delete svg { width: 22px; height: 22px; fill: #ed4245; }
     </style>
 </head>
 <body>
 
-<div class="bg-blobs">
-    <div class="blob blob-1"></div>
-    <div class="blob blob-2"></div>
-    <div class="blob blob-3"></div>
-</div>
-
-<div class="container">
-    <div id="status" class="status">Обновлено</div>
-
-    <div id="authBlock" class="card auth-box">
-        <div style="font-size: 4rem; margin-bottom: 10px; text-shadow: 0 10px 20px rgba(0,0,0,0.1);">🏛️</div>
-        <h1>Академия</h1>
-        <div class="subtitle">Электронный журнал</div>
+    <div class="journal-container">
         
-        <div id="loginView">
-            <input type="text" id="loginInput" placeholder="Логин">
-            <input type="password" id="passwordInput" placeholder="Пароль">
-            <button class="btn-primary" onclick="loginUser()">Войти</button>
-            <div id="loginError" class="error"></div>
-            <div class="link-text" onclick="toggleAuth('reg')">Нет аккаунта? Зарегистрироваться</div>
-        </div>
-
-        <div id="regView" style="display: none;">
-            <input type="text" id="regNameInput" placeholder="ФИО (напр: Иванов И.И.)">
-            <input type="text" id="regLoginInput" placeholder="Придумайте логин">
-            <input type="password" id="regPasswordInput" placeholder="Придумайте пароль">
-            <button class="btn-success" style="width: 100%; margin-top: 10px;" onclick="registerUser()">Создать аккаунт</button>
-            <div id="regError" class="error"></div>
-            <div class="link-text" onclick="toggleAuth('login')">Уже есть аккаунт? Войти</div>
-        </div>
-    </div>
-
-    <div id="waitingBlock" class="card auth-box" style="display: none;">
-        <div style="font-size: 4rem; margin-bottom: 10px;">⏳</div>
-        <h2 style="color: #1e293b; margin-bottom: 10px;">Ожидание доступа</h2>
-        <div style="color: #64748b; font-weight: 500; font-size: 0.95rem;">Ваша должность еще не назначена.</div>
-        <button class="logout-btn" onclick="logout()" style="margin-top: 30px;">🚪 Выйти из аккаунта</button>
-        <div class="instruction-text">Вы должны отправить свой логин куратору факультета (или вышестоящему руководству), чтобы получить должность и доступ к журналу.</div>
-    </div>
-
-    <div id="mainBlock" class="card main-panel" style="display: none;">
-        <div class="panel-header">
-            <h1 style="margin:0; font-size:1.8rem;">📚 Журнал</h1>
-            <div class="profile-section">
-                <div class="avatar" id="avatarBtn">?</div>
-                <div class="profile-dropdown" id="profileMenu">
-                    <div id="profileName" style="font-weight: 800; color: #1e293b; font-size: 1.1rem;">Имя</div>
-                    <div id="profileRole" style="font-size: 0.85rem; color: var(--primary); font-weight: 700; margin-bottom: 15px;">Должность</div>
-                    <hr style="border:none; border-top: 1px solid var(--border-color); margin: 10px 0;">
-                    <button id="adminGearBtn" class="admin-gear-btn" style="display: none;" onclick="openAdminModal()">⚙️ Выдать должность</button>
-                    <button id="logsBtn" class="admin-gear-btn" style="display: none;" onclick="openLogsModal()">📜 Журнал действий</button>
-                    <button class="logout-btn" onclick="logout()">🚪 Выйти</button>
+        <div class="journal-header">
+            <div class="journal-title">
+                <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
+                Журнал Академии
+            </div>
+            
+            <div class="profile-wrapper">
+                <button class="profile-trigger" onclick="toggleSettings(event)">КУ</button>
+                <div class="settings-panel" id="settingsPanel">
+                    <div class="settings-title">⚙️ Профиль оператора</div>
+                    <div class="settings-field">
+                        <div class="settings-label">Оператор</div>
+                        <div class="settings-value" id="operatorName">kyz</div>
+                    </div>
+                    <div class="settings-field">
+                        <div class="settings-label">Доступ</div>
+                        <div class="settings-value" id="operatorRole">Администратор</div>
+                    </div>
                 </div>
             </div>
         </div>
-        
-        <div class="add-cadet-form" id="addCadetForm">
-            <div><div style="font-size:0.8rem; color:var(--text-muted); margin-bottom:5px; font-weight:bold;">Фамилия</div><input type="text" id="newSurname" placeholder="Иванов"></div>
-            <div><div style="font-size:0.8rem; color:var(--text-muted); margin-bottom:5px; font-weight:bold;">Имя</div><input type="text" id="newName" placeholder="Иван"></div>
-            <div><div style="font-size:0.8rem; color:var(--text-muted); margin-bottom:5px; font-weight:bold;">Отчество</div><input type="text" id="newPatronymic" placeholder="Иванович"></div>
-            <button class="btn-success" onclick="addCadet()">Зачислить</button>
+
+        <div class="admin-panel" id="adminPanel">
+            <div class="admin-title">👑 Панель Администратора - Выдача должности</div>
+            <div class="admin-form">
+                <div class="input-group">
+                    <label>1. Логин пользователя</label>
+                    <input type="text" id="assignLoginInput" placeholder="Введите логин">
+                </div>
+                <div class="input-group">
+                    <label>2. Выберите должность</label>
+                    <select id="assignRoleSelect" class="styled-select">
+                        <option value="Курсант">Курсант</option>
+                        <option value="Сотрудник ПК">Сотрудник ПК</option>
+                        <option value="Руководитель ПК">Руководитель ПК</option>
+                        <option value="Преподаватель">Преподаватель</option>
+                        <option value="Заведующий учебной частью">Заведующий учебной частью</option>
+                        <option value="Секретарь факультета">Секретарь факультета</option>
+                        <option value="Куратор факультета">Куратор факультета</option>
+                        <option value="Декан факультета">Декан факультета</option>
+                        <option value="Проректор академии">Проректор академии</option>
+                        <option value="Ректор академии">Ректор академии</option>
+                        <option value="Советник академии">Советник академии</option>
+                        <option value="Начальник академии">Начальник академии</option>
+                    </select>
+                </div>
+                <button class="btn-admin" onclick="assignRoleToUser()">Выдать должность</button>
+            </div>
         </div>
 
-        <div class="table-controls">
-            <input type="text" id="searchCadetInput" class="search-cadet" placeholder="🔍 Поиск по фамилии..." oninput="renderTable()">
+        <div class="enrollment-form">
+            <div class="input-group">
+                <label>Фамилия</label>
+                <input type="text" id="surNameInput" placeholder="Иванов">
+            </div>
+            <div class="input-group">
+                <label>Имя</label>
+                <input type="text" id="firstNameInput" placeholder="Иван">
+            </div>
+            <div class="input-group">
+                <label>Отчество</label>
+                <input type="text" id="patronymicInput" placeholder="Иванович">
+            </div>
+            <button class="btn-enroll" onclick="addCadet()">Зачислить</button>
+        </div>
+
+        <div class="search-container">
+            <div class="search-box">
+                <input type="text" id="searchInput" oninput="filterTable()" placeholder="Поиск по фамилии...">
+            </div>
         </div>
 
         <div class="table-wrapper">
-            <table class="grades-table">
-                <thead id="tableHeader"><tr id="tableHeadRow"></tr></thead>
-                <tbody id="tableBody"></tbody>
+            <table class="journal-table">
+                <thead id="journalHead"></thead>
+                <tbody id="journalBody"></tbody>
             </table>
         </div>
+
     </div>
-</div>
 
-<div id="adminModal" class="modal-overlay">
-    <div class="card" style="padding: 30px; width: 90%; max-width: 400px; box-shadow: none;">
-        <h2 style="margin-bottom: 20px;">⚙️ Выдача должности</h2>
-        <input type="text" id="targetLogin" placeholder="Логин сотрудника">
-        <select id="targetRole" style="margin-bottom: 20px;">
-            <option value="Без должности">Без должности</option>
-            <option value="Курсант">Курсант</option>
-            <option value="Сотрудник ПК">Сотрудник ПК</option>
-            <option value="Руководитель ПК">Руководитель ПК</option>
-            <option value="Преподаватель">Преподаватель</option>
-            <option value="Заведующий">Заведующий</option>
-            <option value="Секретарь">Секретарь</option>
-            <option value="Куратор">Куратор</option>
-            <option value="Декан">Декан</option>
-            <option value="Проректор">Проректор</option>
-            <option value="Ректор">Ректор</option>
-            <option value="Советник">Советник</option>
-            <option value="Начальник академии">Начальник академии</option>
-        </select>
-        <button class="btn-primary" onclick="assignRole()">Назначить</button>
-        <button class="logout-btn" onclick="document.getElementById('adminModal').style.display='none'" style="background:none; color:var(--text-muted);">Отмена</button>
-    </div>
-</div>
+    <script>
+        // Имитация текущего входа. По умолчанию - это главный админ "kyz"
+        const currentLogin = "kyz"; 
 
-<div id="editCadetModal" class="modal-overlay">
-    <div class="card" style="padding: 30px; width: 90%; max-width: 400px; box-shadow: none;">
-        <h2 style="margin-bottom: 20px;">✏️ Редактирование курсанта</h2>
-        <input type="hidden" id="editCadetId">
-        <div style="font-size:0.8rem; color:var(--text-muted); font-weight:bold; margin-top:10px;">Фамилия</div>
-        <input type="text" id="editSurname">
-        <div style="font-size:0.8rem; color:var(--text-muted); font-weight:bold; margin-top:10px;">Имя</div>
-        <input type="text" id="editName">
-        <div style="font-size:0.8rem; color:var(--text-muted); font-weight:bold; margin-top:10px;">Отчество</div>
-        <button class="btn-primary" onclick="saveCadetEdit()">Сохранить</button>
-        <button class="logout-btn" onclick="document.getElementById('editCadetModal').style.display='none'" style="background:none; color:var(--text-muted);">Отмена</button>
-    </div>
-</div>
+        // Массив предметов
+        let subjects = ["Военно-тактическая", "Русский язык", "Юридический"];
 
-<div id="logsModal" class="modal-overlay">
-    <div class="card" style="padding: 30px; width: 90%; max-width: 900px; box-shadow: none;">
-        <h2 style="margin-bottom: 15px;">📜 Журнал действий</h2>
-        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 15px;">Здесь отображаются последние действия руководителей.</p>
-        <div class="logs-container">
-            <table class="logs-table">
-                <thead><tr><th style="width: 130px;">Время</th><th style="width: 200px;">Пользователь</th><th>Действие</th></tr></thead>
-                <tbody id="logsTableBody"></tbody>
-            </table>
-        </div>
-        <button class="logout-btn" onclick="document.getElementById('logsModal').style.display='none'" style="background:none; color:var(--text-muted); margin-top: 15px;">Закрыть</button>
-    </div>
-</div>
+        // База курсантов и их оценок
+        let cadets = [
+            { id: 1, surname: "Чернышов", firstname: "Тимофей", patronymic: "Владимирович", grades: { "Военно-тактическая": [5, 4], "Русский язык": [5] } },
+            { id: 2, surname: "Куроки", firstname: "Такеши", patronymic: "Кацуович", grades: { "Юридический": [4, 3] } }
+        ];
 
-<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
-<script>
-    const firebaseConfig = {
-        apiKey: "AIzaSyArg3bVR6kGDU6XoM74ljpLfBDQ-lC9m4Y",
-        authDomain: "diary-6f282.firebaseapp.com",
-        databaseURL: "https://diary-6f282-default-rtdb.europe-west1.firebasedatabase.app",
-        projectId: "diary-6f282",
-        storageBucket: "diary-6f282.firebasestorage.app",
-        messagingSenderId: "263486503788",
-        appId: "1:263486503788:web:bfd1ff03d4d3829dfd5149"
-    };
-    firebase.initializeApp(firebaseConfig);
-    const database = firebase.database();
-
-    const SUBJECTS = ["Военно-тактическая", "Русский язык", "Юридический"];
-    const ADMIN_ROLES = ["Руководитель ПК", "Куратор", "Декан", "Проректор", "Ректор", "Советник", "Начальник академии"];
-    const PROTECTED_LOGINS = ['kyz', 'per', 'teacher', 'medn123'];
-
-    const ROLE_HIERARCHY = {
-        "Без должности": 0,
-        "Курсант": 1,
-        "Сотрудник ПК": 2,
-        "Руководитель ПК": 3,
-        "Преподаватель": 4,
-        "Секретарь": 5,
-        "Заведующий": 6,
-        "Куратор": 7,
-        "Декан": 7, 
-        "Проректор": 8,
-        "Ректор": 9,
-        "Советник": 10,
-        "Начальник академии": 11
-    };
-
-    const ROLES_CAN_MANAGE_GRADES = ["Преподаватель", "Заведующий", "Секретарь", "Куратор", "Декан", "Проректор", "Ректор", "Советник", "Начальник академии"];
-    const ROLES_CAN_ADD_CADETS = ["Сотрудник ПК", ...ROLES_CAN_MANAGE_GRADES];
-
-    let currentLogin = null;
-    let currentUser = null;
-    let currentEditingCadetOldName = '';
-
-    function showStatus(msg) {
-        const el = document.getElementById('status');
-        el.textContent = msg; el.style.display = 'block';
-        setTimeout(() => el.style.display = 'none', 3000);
-    }
-
-    async function writeLog(actionText) {
-        const timeStr = new Date().toLocaleString('ru-RU');
-        const userStr = currentUser ? `${currentUser.name} (${currentLogin})` : 'Система';
-        await database.ref('logs').push({ 
-            time: timeStr, 
-            user: userStr, 
-            action: actionText, 
-            timestamp: firebase.database.ServerValue.TIMESTAMP 
-        });
-    }
-
-    function getCadetName(id) {
-        if (!window.cadetsData) return `ID: ${id}`;
-        const cadet = window.cadetsData.find(c => c.id === id);
-        return cadet ? `${cadet.surname} ${cadet.name}` : `ID: ${id}`;
-    }
-
-    function toggleAuth(mode) {
-        document.getElementById('loginError').innerText = '';
-        document.getElementById('regError').innerText = '';
-        document.getElementById('loginView').style.display = mode === 'login' ? 'block' : 'none';
-        document.getElementById('regView').style.display = mode === 'reg' ? 'block' : 'none';
-    }
-
-    function listenUserAccess(login) {
-        document.getElementById('authBlock').style.display = 'none';
-
-        database.ref(`users/${login}`).on('value', (snapshot) => {
-            const user = snapshot.val();
-            if (!user) { logout(); return; }
-            currentUser = user;
-            
-            // Если kyz или medn123 - это суперадмины
-            const isSuperAdmin = login === 'kyz' || login.toLowerCase() === 'medn123';
-            
-            // Суперадмины пропускают экран ожидания даже с ролью "Без должности"
-            if (user.role === 'Без должности' && !isSuperAdmin) {
-                document.getElementById('authBlock').style.display = 'none';
-                document.getElementById('mainBlock').style.display = 'none';
-                document.getElementById('waitingBlock').style.display = 'block';
-            } else {
-                document.getElementById('authBlock').style.display = 'none';
-                document.getElementById('waitingBlock').style.display = 'none';
-                document.getElementById('mainBlock').style.display = 'block';
-                setupProfile();
-                listenCadets(); 
+        window.addEventListener('DOMContentLoaded', () => {
+            // Включаем панель админа, если ник "kyz"
+            if (currentLogin === "kyz") {
+                document.getElementById('adminPanel').style.display = 'block';
             }
-        });
-    }
-
-    async function loginUser() {
-        const login = document.getElementById('loginInput').value.trim();
-        const pwd = document.getElementById('passwordInput').value.trim();
-        if (login.toLowerCase() === 'teacher') return document.getElementById('loginError').innerText = 'Вход по общим логинам отключен.';
-        if(!login || !pwd) return;
-
-        const snap = await database.ref(`users/${login}`).once('value');
-        const user = snap.val();
-
-        if (user && user.pwd === pwd) {
-            currentLogin = login;
-            localStorage.setItem('academyLogin', login);
-            listenUserAccess(login); 
-        } else {
-            document.getElementById('loginError').innerText = 'Неверный логин или пароль';
-        }
-    }
-
-    async function registerUser() {
-        const name = document.getElementById('regNameInput').value.trim();
-        const login = document.getElementById('regLoginInput').value.trim();
-        const pwd = document.getElementById('regPasswordInput').value.trim();
-        const err = document.getElementById('regError');
-
-        if (!name || !login || !pwd) return err.innerText = 'Заполните все поля';
-        if (PROTECTED_LOGINS.includes(login.toLowerCase())) return err.innerText = 'Логин зарезервирован системой.';
-
-        const snap = await database.ref(`users/${login}`).once('value');
-        if (snap.exists()) return err.innerText = 'Логин уже занят';
-
-        await database.ref(`users/${login}`).set({ name, pwd, role: 'Без должности' });
-        await writeLog(`Зарегистрирован новый аккаунт: ${name} (логин: ${login})`);
-        
-        showStatus('✅ Аккаунт создан');
-        toggleAuth('login');
-        document.getElementById('loginInput').value = login;
-        document.getElementById('passwordInput').value = pwd;
-    }
-
-    function setupProfile() {
-        document.getElementById('profileName').innerText = currentUser.name;
-        document.getElementById('profileRole').innerText = currentUser.role;
-        document.getElementById('avatarBtn').innerText = currentUser.name.substring(0, 2).toUpperCase();
-        
-        const isSuperAdmin = currentLogin === 'kyz' || currentLogin.toLowerCase() === 'medn123';
-        const canAssign = ADMIN_ROLES.includes(currentUser.role) || isSuperAdmin;
-        
-        const canSeeLogs = ["Куратор", "Декан", "Проректор", "Ректор", "Советник", "Начальник академии"].includes(currentUser.role) || isSuperAdmin;
-        
-        document.getElementById('adminGearBtn').style.display = canAssign ? 'block' : 'none';
-        document.getElementById('logsBtn').style.display = canSeeLogs ? 'block' : 'none';
-    }
-
-    document.getElementById('avatarBtn').onclick = (e) => {
-        e.stopPropagation();
-        const menu = document.getElementById('profileMenu');
-        menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
-    };
-    window.onclick = () => document.getElementById('profileMenu').style.display = 'none';
-
-    function openAdminModal() {
-        document.getElementById('targetLogin').value = '';
-        document.getElementById('adminModal').style.display = 'flex';
-    }
-
-    async function assignRole() {
-        const targetLogin = document.getElementById('targetLogin').value.trim();
-        const newRole = document.getElementById('targetRole').value;
-        
-        if (!targetLogin) return;
-        
-        const isSuperAdmin = currentLogin === 'kyz' || currentLogin.toLowerCase() === 'medn123';
-        
-        // Блокируем смену должности самому себе для всех, КРОМЕ суперадминов (kyz / medn123)
-        if (targetLogin === currentLogin && !isSuperAdmin) { 
-            showStatus('❌ Нельзя изменить должность себе'); 
-            return; 
-        }
-
-        const snap = await database.ref(`users/${targetLogin}`).once('value');
-        const targetUser = snap.val();
-
-        if (!targetUser) { showStatus('❌ Пользователь не найден'); return; }
-
-        // ОГРАНИЧЕНИЯ ДЛЯ РУКОВОДИТЕЛЯ ПК (суперадмины игнорируют)
-        if (currentUser.role === 'Руководитель ПК' && !isSuperAdmin) {
-            if (newRole !== 'Сотрудник ПК' && newRole !== 'Без должности') {
-                showStatus('❌ Вы можете выдавать/снимать только должность «Сотрудник ПК»');
-                return;
-            }
-            if (targetUser.role !== 'Сотрудник ПК' && targetUser.role !== 'Без должности') {
-                showStatus('❌ Вы не имеете права изменять должность этому сотруднику');
-                return;
-            }
-        }
-
-        // Проверка обычной иерархии должностей (суперадмины игнорируют)
-        if (!isSuperAdmin && currentUser.role !== 'Руководитель ПК') {
-            const myRank = ROLE_HIERARCHY[currentUser.role] || 0;
-            const targetRoleRank = ROLE_HIERARCHY[newRole] || 0;
-            const targetCurrentRank = ROLE_HIERARCHY[targetUser.role] || 0;
-
-            if (myRank <= targetRoleRank) { showStatus('❌ Недостаточно прав для этой должности'); return; }
-            if (myRank <= targetCurrentRank && targetCurrentRank !== 0) { showStatus('❌ Нельзя менять должность сотруднику вашего уровня'); return; }
-        }
-
-        await database.ref(`users/${targetLogin}/role`).set(newRole);
-        await writeLog(`Выдал должность «${newRole}» пользователю ${targetLogin}`);
-        
-        document.getElementById('adminModal').style.display = 'none';
-        showStatus('✅ Должность обновлена');
-    }
-
-    function openLogsModal() {
-        document.getElementById('logsModal').style.display = 'flex';
-        const tbody = document.getElementById('logsTableBody');
-        tbody.innerHTML = '<tr><td colspan="3" style="text-align:center; color: #64748b;">Загрузка логов...</td></tr>';
-
-        database.ref('logs').limitToLast(100).once('value', (snap) => {
-            tbody.innerHTML = '';
-            if (!snap.exists()) return tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;">Записей пока нет</td></tr>';
-            
-            let logsArray = [];
-            snap.forEach(child => {
-                logsArray.push(child.val());
-            });
-            
-            logsArray.reverse().forEach(log => {
-                tbody.innerHTML += `<tr><td style="color:#64748b; font-size:0.8rem;">${log.time || '—'}</td><td><b>${log.user || 'Система'}</b></td><td>${log.action || ''}</td></tr>`;
-            });
-        });
-    }
-
-    function logout() { 
-        localStorage.removeItem('academyLogin');
-        location.reload(); 
-    }
-
-    function listenCadets() {
-        database.ref('cadets').on('value', (snap) => {
-            window.cadetsData = snap.val() ? Object.values(snap.val()) : [];
             renderTable();
         });
-    }
 
-    async function addCadet() {
-        const isSuperAdmin = currentLogin === 'kyz' || currentLogin.toLowerCase() === 'medn123';
-        if (!ROLES_CAN_ADD_CADETS.includes(currentUser.role) && !isSuperAdmin) return; 
-
-        const surname = document.getElementById('newSurname').value.trim();
-        const name = document.getElementById('newName').value.trim();
-        const pat = document.getElementById('newPatronymic').value.trim();
-        if (surname && name && pat) {
-            const id = Date.now().toString();
-            await database.ref(`cadets/${id}`).set({ id, surname, name, patronymic: pat });
-            await writeLog(`Зачислил курсанта: ${surname} ${name} ${pat}`);
-            document.getElementById('newSurname').value = ''; document.getElementById('newName').value = ''; document.getElementById('newPatronymic').value = '';
-            showStatus('✅ Зачислен');
+        // Функция выдачи роли
+        function assignRoleToUser() {
+            const targetLogin = document.getElementById('assignLoginInput').value.trim();
+            const selectedRole = document.getElementById('assignRoleSelect').value;
+            if (!targetLogin) return alert("Пожалуйста, введите логин пользователя!");
+            alert(`✅ Успешно!\nПользователю [ ${targetLogin} ] назначена должность: ${selectedRole}.`);
+            document.getElementById('assignLoginInput').value = '';
         }
-    }
 
-    function openEditCadet(id) {
-        const isSuperAdmin = currentLogin === 'kyz' || currentLogin.toLowerCase() === 'medn123';
-        if (!ROLES_CAN_MANAGE_GRADES.includes(currentUser.role) && !isSuperAdmin) return;
-
-        const cadet = window.cadetsData.find(c => c.id === id);
-        if (!cadet) return;
-        document.getElementById('editCadetId').value = cadet.id;
-        document.getElementById('editSurname').value = cadet.surname;
-        document.getElementById('editName').value = cadet.name;
-        document.getElementById('editPatronymic').value = cadet.patronymic;
-        currentEditingCadetOldName = `${cadet.surname} ${cadet.name} ${cadet.patronymic}`;
-        document.getElementById('editCadetModal').style.display = 'flex';
-    }
-
-    async function saveCadetEdit() {
-        const isSuperAdmin = currentLogin === 'kyz' || currentLogin.toLowerCase() === 'medn123';
-        if (!ROLES_CAN_MANAGE_GRADES.includes(currentUser.role) && !isSuperAdmin) return;
-
-        const id = document.getElementById('editCadetId').value;
-        const surname = document.getElementById('editSurname').value.trim();
-        const name = document.getElementById('editName').value.trim();
-        const pat = document.getElementById('editPatronymic').value.trim();
-        if (!surname || !name || !pat) return;
-        await database.ref(`cadets/${id}`).update({ surname, name, patronymic: pat });
-        await writeLog(`Изменил ФИО курсанта: ${currentEditingCadetOldName} ➔ ${surname} ${name} ${pat}`);
-        document.getElementById('editCadetModal').style.display = 'none';
-        showStatus('✅ Данные обновлены');
-    }
-
-    window.delCadet = async (id) => { 
-        const isSuperAdmin = currentLogin === 'kyz' || currentLogin.toLowerCase() === 'medn123';
-        if (!ROLES_CAN_MANAGE_GRADES.includes(currentUser.role) && !isSuperAdmin) return;
-
-        await writeLog(`Отчислил курсанта: ${getCadetName(id)}`);
-        await database.ref(`cadets/${id}`).remove();
-    };
-    
-    window.addMark = async (id, subj, mark) => { 
-        const isSuperAdmin = currentLogin === 'kyz' || currentLogin.toLowerCase() === 'medn123';
-        if (!ROLES_CAN_MANAGE_GRADES.includes(currentUser.role) && !isSuperAdmin) return;
-
-        const r=database.ref(`cadets/${id}/grades/${subj}`); 
-        const m=(await r.once('value')).val()||[]; 
-        m.push(mark); await r.set(m); 
-        await writeLog(`Оценка «${mark}» по предмету «${subj}» курсанту: ${getCadetName(id)}`);
-    };
-    
-    window.delMark = async (id, subj, i) => { 
-        const isSuperAdmin = currentLogin === 'kyz' || currentLogin.toLowerCase() === 'medn123';
-        if (!ROLES_CAN_MANAGE_GRADES.includes(currentUser.role) && !isSuperAdmin) return;
-
-        const r=database.ref(`cadets/${id}/grades/${subj}`); 
-        const m=(await r.once('value')).val()||[]; 
-        if(m[i]){ 
-            const deletedMark = m[i]; m.splice(i,1); await r.set(m); 
-            await writeLog(`Удалил оценку «${deletedMark}» по предмету «${subj}» у курсанта: ${getCadetName(id)}`);
+        // Рендеринг всей таблицы
+        function renderTable() {
+            renderHeader();
+            renderBody();
+            initCustomSelects();
         }
-    };
 
-    function getMarkClass(m) { return m==='5'?'grade-5':m==='4'?'grade-4':m==='3'?'grade-3':m==='2'?'grade-2':m==='н'?'grade-absent':m==='о'?'grade-task':''; }
+        // --- ГЕНЕРАЦИЯ ШАПКИ И РЕДАКТИРОВАНИЕ ПРЕДМЕТОВ ---
+        function renderHeader() {
+            const thead = document.getElementById('journalHead');
+            thead.innerHTML = '';
+            const tr = document.createElement('tr');
 
-    function renderTable() {
-        const tbody = document.getElementById('tableBody');
-        const isSuperAdmin = currentLogin === 'kyz' || currentLogin.toLowerCase() === 'medn123';
-        
-        const canManageGrades = ROLES_CAN_MANAGE_GRADES.includes(currentUser.role) || isSuperAdmin;
-        const canAddCadets = ROLES_CAN_ADD_CADETS.includes(currentUser.role) || isSuperAdmin;
+            // Первая ячейка (Курсант + кнопки + и -)
+            const thCadet = document.createElement('th');
+            thCadet.style.width = "20%";
+            thCadet.innerHTML = `
+                <div class="cadet-header-cell">
+                    <span>Курсант</span>
+                    <div class="subject-controls" id="subjControls">
+                        <button class="btn-subject-control btn-subject-add" onclick="addSubject(event)" title="Добавить колонку">+</button>
+                        <button class="btn-subject-control btn-subject-remove" onclick="removeSubject(event)" title="Удалить последнюю колонку">−</button>
+                    </div>
+                </div>
+            `;
+            tr.appendChild(thCadet);
 
-        document.getElementById('addCadetForm').style.display = canAddCadets ? 'grid' : 'none';
-        
-        document.getElementById('tableHeadRow').innerHTML = `<th>Курсант</th><th>Военно-тактическая</th><th>Русский язык</th><th>Юридический</th><th style="text-align:center;">Средний балл</th>${canManageGrades ? '<th style="text-align:center;">Удалить</th>' : ''}`;
-        
-        let cadets = window.cadetsData || [];
-        const searchQuery = document.getElementById('searchCadetInput').value.toLowerCase().trim();
-        if (searchQuery) cadets = cadets.filter(c => c.surname.toLowerCase().includes(searchQuery));
-        
-        if (!cadets.length) return tbody.innerHTML = `<tr><td colspan="${canManageGrades ? 6 : 5}" style="text-align:center; padding:40px;">Курсанты не найдены</td></tr>`;
-        
-        tbody.innerHTML = '';
-        cadets.forEach(cadet => {
-            const isInitials = cadet.name.length <= 2 && cadet.patronymic.length <= 2;
-            const editBtnHtml = canManageGrades ? `<button class="edit-icon" onclick="openEditCadet('${cadet.id}')">✏️</button>` : '';
-            const nameDisplay = isInitials 
-                ? `<div style="display:flex; align-items:center;"><b>${cadet.surname} ${cadet.name} ${cadet.patronymic}</b> ${editBtnHtml}</div>` 
-                : `<div style="display:flex; align-items:center;"><b>${cadet.surname}</b> ${editBtnHtml}</div><div style="font-size:0.8rem;color:#64748b; margin-top:2px;">${cadet.name} ${cadet.patronymic}</div>`;
-            let tr = `<tr><td>${nameDisplay}</td>`;
-            let allMarks = [];
-            
-            SUBJECTS.forEach(subj => {
-                const marks = (cadet.grades || {})[subj] || [];
-                allMarks.push(...marks);
-                let marksHtml = marks.map((m, i) => `<span class="grade-badge ${getMarkClass(m)}" ${canManageGrades?'onclick="delMark(\''+cadet.id+'\',\''+subj+'\','+i+')"':''} style="${canManageGrades?'cursor:pointer;':'cursor:default; transform:none;'}">${m}</span>`).join('');
-                let controlHtml = canManageGrades ? `<div class="grade-control"><select id="sel_${cadet.id}_${subj}" style="width:auto; padding:4px; border:1px solid #e2e8f0; border-radius:8px;"><option>5</option><option>4</option><option>3</option><option>2</option><option>н</option><option>о</option></select><button class="action-btn" onclick="addMark('${cadet.id}','${subj}', document.getElementById('sel_${cadet.id}_${subj}').value)">+</button></div>` : '';
-                tr += `<td><div class="grades-list">${marksHtml}</div>${controlHtml}</td>`;
+            // Колонки предметов
+            subjects.forEach((subject, index) => {
+                const th = document.createElement('th');
+                th.textContent = subject;
+                
+                // Делаем колонку редактируемой по клику, если логин kyz
+                if (currentLogin === "kyz") {
+                    th.setAttribute('contenteditable', 'true');
+                    th.className = 'editable-subject-th';
+                    th.title = "Нажмите, чтобы переименовать";
+                    
+                    let oldName = subject;
+                    
+                    // Сохранение названия при клике вне колонки
+                    th.addEventListener('blur', () => {
+                        let newName = th.textContent.trim();
+                        if (newName && newName !== oldName) {
+                            subjects[index] = newName;
+                            // Переносим существующие оценки на новое название предмета
+                            cadets.forEach(cadet => {
+                                if (cadet.grades && cadet.grades[oldName]) {
+                                    cadet.grades[newName] = cadet.grades[oldName];
+                                    delete cadet.grades[oldName];
+                                }
+                            });
+                            renderTable();
+                        } else {
+                            th.textContent = oldName; // Возвращаем, если пусто
+                        }
+                    });
+
+                    // Отключаем перенос строки и сохраняем по кнопке Enter
+                    th.addEventListener('keydown', (e) => {
+                        if (e.key === 'Enter') {
+                            e.preventDefault();
+                            th.blur();
+                        }
+                    });
+                }
+                tr.appendChild(th);
             });
-            const nums = allMarks.map(m => parseInt(m)).filter(n => !isNaN(n));
-            const avg = nums.length ? (nums.reduce((a,b)=>a+b,0)/nums.length).toFixed(1) : "—";
-            tr += `<td style="text-align:center"><span class="avg-pill" style="${avg!=='—'&&avg<3.5?'background:linear-gradient(135deg, #f59e0b, #d97706);':''} ${avg!=='—'&&avg<2.5?'background:linear-gradient(135deg, #ef4444, #dc2626);':''}">${avg}</span></td>`;
-            if (canManageGrades) tr += `<td style="text-align:center"><button class="action-btn" style="color:red; border:none; font-size:1.2rem;" onclick="delCadet('${cadet.id}')">🗑️</button></td>`;
-            tr += `</tr>`;
-            tbody.innerHTML += tr;
-        });
-    }
 
-    // АВТОВХОД ПРИ ЗАГРУЗКЕ СТРАНИЦЫ
-    window.onload = () => {
-        const savedLogin = localStorage.getItem('academyLogin');
-        if (savedLogin) {
-            currentLogin = savedLogin;
-            listenUserAccess(savedLogin);
+            // Последние колонки
+            tr.innerHTML += `
+                <th style="width: 100px; text-align: center;">Ср. балл</th>
+                <th style="width: 70px; text-align: center;">Удалить</th>
+            `;
+            thead.appendChild(tr);
+
+            if (currentLogin === "kyz") {
+                document.getElementById('subjControls').style.display = 'flex';
+            }
         }
-    };
-</script>
+
+        // --- ГЕНЕРАЦИЯ СТРОК (КУРСАНТОВ И ОЦЕНОК) ---
+        function renderBody() {
+            const tbody = document.getElementById('journalBody');
+            tbody.innerHTML = '';
+
+            cadets.forEach(cadet => {
+                const tr = document.createElement('tr');
+                
+                let rowHtml = `
+                    <td>
+                        <div class="cadet-surname">${cadet.surname}</div>
+                        <div class="cadet-fullname">${cadet.firstname} ${cadet.patronymic}</div>
+                    </td>
+                `;
+
+                // Отрисовка ячеек для каждого предмета
+                subjects.forEach(subject => {
+                    const currentGrades = cadet.grades[subject] || [];
+                    rowHtml += `<td>${createGradeCellHtml(cadet.id, subject, currentGrades)}</td>`;
+                });
+
+                // Средний балл
+                const avg = calculateAverage(cadet);
+                const avgClass = (avg !== "-" && avg >= 4) ? 'good' : '';
+
+                rowHtml += `
+                    <td style="text-align: center;"><div class="average-badge ${avgClass}" style="margin: 0 auto;">${avg}</div></td>
+                    <td style="text-align: center;">
+                        <button class="btn-delete" onclick="deleteCadet(${cadet.id})">
+                            <svg viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+                        </button>
+                    </td>
+                `;
+                
+                tr.innerHTML = rowHtml;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // --- ФУНКЦИИ ВЫСТАВЛЕНИЯ ОЦЕНОК ---
+        function createGradeCellHtml(cadetId, subjectName, currentGrades) {
+            let grHtml = currentGrades.map(g => `<span class="single-grade g${g}">${g}</span>`).join('');
+            return `
+                <div class="grade-cell-wrapper">
+                    <div class="grades-history">${grHtml}</div>
+                    <div class="grade-control-block">
+                        <div class="custom-select-container">
+                            <div class="custom-select-trigger">
+                                <span class="selected-value">-</span>
+                                <span class="arrow">▾</span>
+                            </div>
+                            <ul class="custom-options-dropdown">
+                                <li data-value="5">5</li>
+                                <li data-value="4">4</li>
+                                <li data-value="3">3</li>
+                                <li data-value="2">2</li>
+                            </ul>
+                        </div>
+                        <button class="btn-add-grade" onclick="addNewGradeAction(${cadetId}, '${subjectName}', this)">+</button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function addNewGradeAction(cadetId, subjectName, buttonEl) {
+            const container = buttonEl.closest('.grade-control-block').querySelector('.custom-select-container');
+            const chosenVal = container.getAttribute('data-chosen-value');
+
+            if (!chosenVal || chosenVal === "-") return alert("Сначала выберите оценку в выпадающем списке (нажмите на минус)!");
+
+            const cadet = cadets.find(c => c.id === cadetId);
+            if (cadet) {
+                if (!cadet.grades[subjectName]) cadet.grades[subjectName] = [];
+                cadet.grades[subjectName].push(Number(chosenVal));
+                renderTable(); // Перерисовываем для обновления списка и среднего балла
+            }
+        }
+
+        function calculateAverage(cadet) {
+            let total = 0, count = 0;
+            for (let sub in cadet.grades) {
+                cadet.grades[sub].forEach(g => { total += g; count++; });
+            }
+            return count === 0 ? "-" : (total / count).toFixed(1);
+        }
+
+        // --- ФУНКЦИИ ДОБАВЛЕНИЯ/УДАЛЕНИЯ ПРЕДМЕТОВ (+ И -) ---
+        function addSubject(e) {
+            e.stopPropagation();
+            const newName = prompt("Введите название нового предмета:");
+            if (newName && newName.trim() !== "") {
+                subjects.push(newName.trim());
+                renderTable();
+            }
+        }
+
+        function removeSubject(e) {
+            e.stopPropagation();
+            if (subjects.length === 0) return;
+            if (confirm(`Удалить последний предмет "${subjects[subjects.length - 1]}"?`)) {
+                subjects.pop();
+                renderTable();
+            }
+        }
+
+        // --- РАБОТА ВЫПАДАЮЩИХ СПИСКОВ ОЦЕНОК И МЕНЮ ПРОФИЛЯ ---
+        function initCustomSelects() {
+            document.querySelectorAll('.custom-select-container').forEach(container => {
+                const trigger = container.querySelector('.custom-select-trigger');
+                const dropdown = container.querySelector('.custom-options-dropdown');
+                const valueText = container.querySelector('.selected-value');
+
+                // Открытие/закрытие списка оценок
+                trigger.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    document.querySelectorAll('.custom-select-container.open').forEach(other => {
+                        if (other !== container) other.classList.remove('open');
+                    });
+                    container.classList.toggle('open');
+                });
+
+                // Выбор оценки
+                dropdown.querySelectorAll('li').forEach(option => {
+                    option.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        const val = option.getAttribute('data-value');
+                        valueText.textContent = val;
+                        container.setAttribute('data-chosen-value', val);
+                        container.classList.remove('open');
+                    });
+                });
+            });
+        }
+
+        function toggleSettings(e) { 
+            e.stopPropagation(); 
+            document.getElementById('settingsPanel').classList.toggle('active'); 
+        }
+
+        // Закрытие всех меню при клике по пустому месту
+        document.addEventListener('click', () => {
+            document.getElementById('settingsPanel').classList.remove('active');
+            document.querySelectorAll('.custom-select-container.open').forEach(el => el.classList.remove('open'));
+        });
+
+        // --- УПРАВЛЕНИЕ КУРСАНТАМИ (ДОБАВИТЬ/УДАЛИТЬ/НАЙТИ) ---
+        function addCadet() {
+            const surname = document.getElementById('surNameInput').value.trim();
+            const firstname = document.getElementById('firstNameInput').value.trim();
+            const patronymic = document.getElementById('patronymicInput').value.trim();
+            
+            if (!surname || !firstname) return alert('Заполните Фамилию и Имя!');
+            
+            cadets.push({ id: Date.now(), surname, firstname, patronymic, grades: {} });
+            renderTable();
+            
+            // Очистка полей
+            document.getElementById('surNameInput').value = '';
+            document.getElementById('firstNameInput').value = '';
+            document.getElementById('patronymicInput').value = '';
+        }
+
+        function deleteCadet(id) { 
+            if (confirm("Вы точно хотите удалить этого курсанта?")) {
+                cadets = cadets.filter(c => c.id !== id); 
+                renderTable(); 
+            }
+        }
+
+        function filterTable() {
+            const query = document.getElementById('searchInput').value.toLowerCase();
+            document.querySelectorAll('#journalBody tr').forEach(row => {
+                const surnameEl = row.querySelector('.cadet-surname');
+                if (surnameEl) {
+                    row.style.display = surnameEl.textContent.toLowerCase().includes(query) ? '' : 'none';
+                }
+            });
+        }
+    </script>
 </body>
 </html>

@@ -3,7 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Электронный Журнал Академии</title>
+    <title>Электронный Журнал Академии (Firebase)</title>
+    <!-- Подключаем Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
     <style>
         :root {
             --bg-gradient: linear-gradient(135deg, #110c29 0%, #1c1236 50%, #3a1235 100%);
@@ -33,7 +36,6 @@
             padding: 50px 20px;
         }
 
-        /* --- ОСНОВНАЯ ПАНЕЛЬ ЖУРНАЛА --- */
         .journal-container {
             background: var(--panel-bg);
             width: 100%;
@@ -55,7 +57,6 @@
         }
         .journal-container::-webkit-scrollbar-thumb:hover { background: #b9bcc3; }
 
-        /* Шапка журнала */
         .journal-header {
             display: flex;
             justify-content: space-between;
@@ -74,7 +75,6 @@
 
         .journal-title svg { width: 36px; height: 36px; fill: #3f429f; }
 
-        /* --- ПРОФИЛЬ --- */
         .profile-wrapper { position: relative; }
         .profile-trigger {
             width: 60px;
@@ -113,7 +113,6 @@
         .settings-label { font-size: 12px; color: var(--text-muted); text-transform: uppercase; font-weight: 700; }
         .settings-value { font-size: 18px; color: var(--text-main); font-weight: 600; margin-top: 4px; }
 
-        /* --- ПАНЕЛЬ АДМИНА --- */
         .admin-panel {
             background: rgba(88, 101, 242, 0.08);
             border: 2px dashed var(--accent-blue);
@@ -134,7 +133,6 @@
         }
         .btn-admin:hover { background: #4752c4; }
 
-        /* --- ФОРМА ЗАЧИСЛЕНИЯ --- */
         .enrollment-form {
             display: grid; grid-template-columns: repeat(3, 1fr) auto; gap: 20px;
             background: rgba(255, 255, 255, 0.6); padding: 25px; border-radius: 20px; margin-bottom: 30px; align-items: flex-end;
@@ -152,7 +150,6 @@
         }
         .btn-enroll:hover { background: var(--accent-green-hover); }
 
-        /* --- ПОИСК --- */
         .search-container { display: flex; justify-content: flex-end; margin-bottom: 25px; }
         .search-box { position: relative; width: 320px; }
         .search-box input {
@@ -161,7 +158,6 @@
         }
         .search-box::before { content: "🔍"; position: absolute; left: 16px; top: 50%; transform: translateY(-50%); font-size: 16px; color: var(--text-muted); }
 
-        /* --- ТАБЛИЦА --- */
         .table-wrapper {
             background: #ffffff; border-radius: 20px; overflow: visible; 
             box-shadow: 0 4px 15px rgba(0,0,0,0.02); padding-bottom: 120px; 
@@ -191,7 +187,6 @@
         .cadet-surname { font-weight: 700; color: var(--text-main); font-size: 18px; }
         .cadet-fullname { font-size: 15px; color: var(--text-muted); margin-top: 4px; }
 
-        /* --- ОЦЕНКИ --- */
         .grade-cell-wrapper { display: flex; flex-direction: column; gap: 10px; }
         .grades-history { display: flex; gap: 6px; flex-wrap: wrap; min-height: 28px; align-items: center; }
         
@@ -252,9 +247,63 @@
         .btn-delete { background: none; border: none; cursor: pointer; padding: 8px; opacity: 0.4; }
         .btn-delete:hover { opacity: 1; }
         .btn-delete svg { width: 22px; height: 22px; fill: #ed4245; }
+
+        /* Уведомление о сохранении */
+        .save-notification {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: #2bcc83;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 30px;
+            font-weight: 700;
+            box-shadow: 0 6px 20px rgba(43, 204, 131, 0.4);
+            opacity: 0;
+            transition: opacity 0.4s ease;
+            pointer-events: none;
+            z-index: 999;
+        }
+        .save-notification.show {
+            opacity: 1;
+        }
+
+        /* Индикатор загрузки */
+        .loading-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.4);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            color: white;
+            font-size: 24px;
+        }
+        .loading-overlay.active {
+            display: flex;
+        }
+        .spinner {
+            border: 8px solid #f3f3f3;
+            border-top: 8px solid var(--accent-blue);
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            animation: spin 1s linear infinite;
+            margin-right: 20px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
     </style>
 </head>
 <body>
+
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="spinner"></div>
+        <span>Загрузка данных...</span>
+    </div>
 
     <div class="journal-container">
         
@@ -339,32 +388,125 @@
 
     </div>
 
-    <script>
-        const currentLogin = "kyz"; 
+    <div id="saveNotification" class="save-notification">✓ Данные сохранены в Firebase</div>
 
-        // Исходные стандартные данные, если в хранилище еще ничего нет
+    <script>
+        // --- ИНИЦИАЛИЗАЦИЯ FIREBASE ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyArg3bVR6kGDU6XoM74ljpLfBDQ-lC9m4Y",
+            authDomain: "diary-6f282.firebaseapp.com",
+            databaseURL: "https://diary-6f282-default-rtdb.europe-west1.firebasedatabase.app",
+            projectId: "diary-6f282",
+            storageBucket: "diary-6f282.firebasestorage.app",
+            messagingSenderId: "263486503788",
+            appId: "1:263486503788:web:bfd1ff03d4d3829dfd5149",
+            measurementId: "G-B9N7FS8RLM"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+
+        // --- ПЕРЕМЕННЫЕ ДАННЫХ ---
+        let subjects = [];
+        let cadets = [];
+        const currentLogin = "kyz";
+
+        // Эталонные данные по умолчанию (если база пуста)
         const defaultSubjects = ["Военно-тактическая", "Русский язык", "Юридический"];
         const defaultCadets = [
             { id: 1, surname: "Чернышов", firstname: "Тимофей", patronymic: "Владимирович", grades: { "Военно-тактическая": [5, 4], "Русский язык": [5] } },
             { id: 2, surname: "Куроки", firstname: "Такеши", patronymic: "Кацуович", grades: { "Юридический": [4, 3] } }
         ];
 
-        // Загрузка актуальных данных из LocalStorage браузера
-        let subjects = JSON.parse(localStorage.getItem('academy_subjects')) || defaultSubjects;
-        let cadets = JSON.parse(localStorage.getItem('academy_cadets')) || defaultCadets;
+        // Флаг для предотвращения множественных одновременных сохранений
+        let isSaving = false;
 
-        // Функция сохранения текущего состояния в память браузера
-        function saveToStorage() {
-            localStorage.setItem('academy_subjects', JSON.stringify(subjects));
-            localStorage.setItem('academy_cadets', JSON.stringify(cadets));
+        // --- ЗАГРУЗКА ДАННЫХ ИЗ FIREBASE ---
+        function loadDataFromFirebase() {
+            const overlay = document.getElementById('loadingOverlay');
+            overlay.classList.add('active');
+
+            // Читаем оба узла одновременно
+            const subjectsRef = database.ref('subjects');
+            const cadetsRef = database.ref('cadets');
+
+            Promise.all([
+                subjectsRef.once('value'),
+                cadetsRef.once('value')
+            ]).then(([subjectsSnap, cadetsSnap]) => {
+                // Обрабатываем предметы
+                let loadedSubjects = subjectsSnap.val();
+                if (loadedSubjects && Array.isArray(loadedSubjects) && loadedSubjects.length > 0) {
+                    subjects = loadedSubjects;
+                } else {
+                    subjects = defaultSubjects.slice();
+                    // Сохраняем дефолтные в Firebase
+                    subjectsRef.set(subjects);
+                }
+
+                // Обрабатываем курсантов
+                let loadedCadets = cadetsSnap.val();
+                if (loadedCadets && Array.isArray(loadedCadets) && loadedCadets.length > 0) {
+                    cadets = loadedCadets;
+                } else {
+                    cadets = defaultCadets.map(c => ({ ...c, grades: { ...c.grades } }));
+                    cadetsRef.set(cadets);
+                }
+
+                overlay.classList.remove('active');
+                // После загрузки рендерим
+                renderTable();
+                // Показываем админ-панель для kyz
+                if (currentLogin === "kyz") {
+                    document.getElementById('adminPanel').style.display = 'block';
+                }
+            }).catch(error => {
+                console.error('Ошибка загрузки данных из Firebase:', error);
+                alert('Не удалось загрузить данные из Firebase. Проверьте интернет-соединение и консоль.');
+                overlay.classList.remove('active');
+                // Загружаем дефолтные локально (чтобы хоть что-то работало)
+                subjects = defaultSubjects.slice();
+                cadets = defaultCadets.map(c => ({ ...c, grades: { ...c.grades } }));
+                renderTable();
+            });
         }
 
+        // --- СОХРАНЕНИЕ ДАННЫХ В FIREBASE ---
+        function saveDataToFirebase() {
+            if (isSaving) return;
+            isSaving = true;
+
+            const updates = {
+                subjects: subjects,
+                cadets: cadets
+            };
+
+            database.ref().update(updates)
+                .then(() => {
+                    isSaving = false;
+                    showSaveNotification();
+                })
+                .catch(error => {
+                    isSaving = false;
+                    console.error('Ошибка сохранения в Firebase:', error);
+                    alert('Не удалось сохранить данные в Firebase. Изменения могут быть потеряны.');
+                });
+        }
+
+        // --- УВЕДОМЛЕНИЕ О СОХРАНЕНИИ ---
+        function showSaveNotification() {
+            const el = document.getElementById('saveNotification');
+            el.classList.add('show');
+            clearTimeout(el._timeout);
+            el._timeout = setTimeout(() => el.classList.remove('show'), 2000);
+        }
+
+        // --- ЗАПУСК ПРИ ЗАГРУЗКЕ ---
         window.addEventListener('DOMContentLoaded', () => {
-            if (currentLogin === "kyz") {
-                document.getElementById('adminPanel').style.display = 'block';
-            }
-            renderTable();
+            loadDataFromFirebase();
         });
+
+        // --- ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ (БЕЗ ИЗМЕНЕНИЙ) ---
 
         function assignRoleToUser() {
             const targetLogin = document.getElementById('assignLoginInput').value.trim();
@@ -374,13 +516,14 @@
             document.getElementById('assignLoginInput').value = '';
         }
 
+        // --- РЕНДЕРИНГ ТАБЛИЦЫ ---
         function renderTable() {
             renderHeader();
             renderBody();
             initCustomSelects();
+            filterTable();
         }
 
-        // --- ГЕНЕРАЦИЯ ШАПКИ ---
         function renderHeader() {
             const thead = document.getElementById('journalHead');
             thead.innerHTML = '';
@@ -420,7 +563,7 @@
                                     delete cadet.grades[oldName];
                                 }
                             });
-                            saveToStorage(); // Сохраняем переименование предмета
+                            saveDataToFirebase();
                             renderTable();
                         } else {
                             th.textContent = oldName; 
@@ -448,7 +591,6 @@
             }
         }
 
-        // --- ГЕНЕРАЦИЯ СТРОК ---
         function renderBody() {
             const tbody = document.getElementById('journalBody');
             tbody.innerHTML = '';
@@ -485,9 +627,7 @@
             });
         }
 
-        // --- УПРАВЛЕНИЕ ОЦЕНКАМИ ---
         function createGradeCellHtml(cadetId, subjectName, currentGrades) {
-            // При клике на оценку вызывается removeGrade()
             let grHtml = currentGrades.map((g, index) => 
                 `<span class="single-grade g${g}" onclick="removeGrade(${cadetId}, '${subjectName}', ${index})" title="Нажмите, чтобы удалить оценку">${g}</span>`
             ).join('');
@@ -514,31 +654,32 @@
             `;
         }
 
+        // --- ОПЕРАЦИИ С ОЦЕНКАМИ ---
         function addNewGradeAction(cadetId, subjectName, buttonEl) {
             const container = buttonEl.closest('.grade-control-block').querySelector('.custom-select-container');
             const chosenVal = container.getAttribute('data-chosen-value');
 
-            if (!chosenVal || chosenVal === "-") return alert("Сначала выберите оценку!");
+            if (!chosenVal || chosenVal === "-") {
+                alert("Сначала выберите оценку в выпадающем списке!");
+                return;
+            }
 
             const cadet = cadets.find(c => c.id === cadetId);
             if (cadet) {
                 if (!cadet.grades[subjectName]) cadet.grades[subjectName] = [];
                 cadet.grades[subjectName].push(Number(chosenVal));
-                
-                saveToStorage(); // Сохраняем новую оценку
+                saveDataToFirebase();
                 renderTable();
             }
         }
 
-        // Функция удаления конкретной оценки по клику на неё
         function removeGrade(cadetId, subjectName, gradeIndex) {
             if (confirm("Вы точно хотите удалить эту оценку?")) {
                 const cadet = cadets.find(c => c.id === cadetId);
                 if (cadet && cadet.grades[subjectName]) {
-                    cadet.grades[subjectName].splice(gradeIndex, 1); // Удаляем оценку из массива
-                    
-                    saveToStorage(); // Сохраняем изменения в памяти
-                    renderTable();   // Обновляем интерфейс
+                    cadet.grades[subjectName].splice(gradeIndex, 1);
+                    saveDataToFirebase();
+                    renderTable();
                 }
             }
         }
@@ -553,13 +694,13 @@
             return count === 0 ? "-" : (total / count).toFixed(1);
         }
 
-        // --- УПРАВЛЕНИЕ КОЛОНКАМИ ПРЕДМЕТОВ ---
+        // --- УПРАВЛЕНИЕ КОЛОНКАМИ ---
         function addSubject(e) {
             e.stopPropagation();
             const newName = prompt("Введите название нового предмета:");
             if (newName && newName.trim() !== "") {
                 subjects.push(newName.trim());
-                saveToStorage(); // Сохраняем новый предмет
+                saveDataToFirebase();
                 renderTable();
             }
         }
@@ -569,34 +710,40 @@
             if (subjects.length === 0) return;
             if (confirm(`Удалить последний предмет "${subjects[subjects.length - 1]}"?`)) {
                 subjects.pop();
-                saveToStorage(); // Сохраняем удаление предмета
+                // Также удаляем этот предмет из оценок всех курсантов
+                cadets.forEach(c => delete c.grades[subjects[subjects.length]]); // последний удалённый
+                saveDataToFirebase();
                 renderTable();
             }
         }
 
-        // --- ВЫПАДАЮЩИЕ СПИСКИ И МЕНЮ ---
+        // --- ВЫПАДАЮЩИЕ СПИСКИ ---
         function initCustomSelects() {
             document.querySelectorAll('.custom-select-container').forEach(container => {
                 const trigger = container.querySelector('.custom-select-trigger');
                 const dropdown = container.querySelector('.custom-options-dropdown');
                 const valueText = container.querySelector('.selected-value');
 
-                trigger.addEventListener('click', (e) => {
+                trigger.removeEventListener('click', trigger._clickHandler);
+                trigger._clickHandler = (e) => {
                     e.stopPropagation();
                     document.querySelectorAll('.custom-select-container.open').forEach(other => {
                         if (other !== container) other.classList.remove('open');
                     });
                     container.classList.toggle('open');
-                });
+                };
+                trigger.addEventListener('click', trigger._clickHandler);
 
                 dropdown.querySelectorAll('li').forEach(option => {
-                    option.addEventListener('click', (e) => {
+                    option.removeEventListener('click', option._clickHandler);
+                    option._clickHandler = (e) => {
                         e.stopPropagation();
                         const val = option.getAttribute('data-value');
                         valueText.textContent = val;
                         container.setAttribute('data-chosen-value', val);
                         container.classList.remove('open');
-                    });
+                    };
+                    option.addEventListener('click', option._clickHandler);
                 });
             });
         }
@@ -620,8 +767,7 @@
             if (!surname || !firstname) return alert('Заполните Фамилию и Имя!');
             
             cadets.push({ id: Date.now(), surname, firstname, patronymic, grades: {} });
-            
-            saveToStorage(); // Сохраняем нового курсанта
+            saveDataToFirebase();
             renderTable();
             
             document.getElementById('surNameInput').value = '';
@@ -632,11 +778,12 @@
         function deleteCadet(id) { 
             if (confirm("Вы точно хотите удалить этого курсанта?")) {
                 cadets = cadets.filter(c => c.id !== id); 
-                saveToStorage(); // Сохраняем удаление курсанта
+                saveDataToFirebase();
                 renderTable(); 
             }
         }
 
+        // --- ПОИСК ---
         function filterTable() {
             const query = document.getElementById('searchInput').value.toLowerCase();
             document.querySelectorAll('#journalBody tr').forEach(row => {

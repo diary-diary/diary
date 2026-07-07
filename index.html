@@ -74,7 +74,7 @@
 
         .journal-title svg { width: 36px; height: 36px; fill: #3f429f; }
 
-        /* --- ПРОФИЛЬ (БЕЗ ВЫХОДА) --- */
+        /* --- ПРОФИЛЬ --- */
         .profile-wrapper { position: relative; }
         .profile-trigger {
             width: 60px;
@@ -191,7 +191,7 @@
         .cadet-surname { font-weight: 700; color: var(--text-main); font-size: 18px; }
         .cadet-fullname { font-size: 15px; color: var(--text-muted); margin-top: 4px; }
 
-        /* --- ВЫСТАВЛЕНИЕ И ОТОБРАЖЕНИЕ ОЦЕНОК --- */
+        /* --- ОЦЕНКИ --- */
         .grade-cell-wrapper { display: flex; flex-direction: column; gap: 10px; }
         .grades-history { display: flex; gap: 6px; flex-wrap: wrap; min-height: 28px; align-items: center; }
         
@@ -199,7 +199,14 @@
             display: inline-flex; align-items: center; justify-content: center;
             width: 28px; height: 28px; border-radius: 8px; font-weight: 800; font-size: 14px; color: white;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            cursor: pointer;
+            transition: transform 0.2s, opacity 0.2s;
         }
+        .single-grade:hover {
+            transform: scale(1.15);
+            opacity: 0.85;
+        }
+        
         .single-grade.g5 { background: var(--accent-green); }
         .single-grade.g4 { background: var(--accent-blue); }
         .single-grade.g3 { background: #faa81a; }
@@ -333,27 +340,32 @@
     </div>
 
     <script>
-        // Имитация текущего входа. По умолчанию - это главный админ "kyz"
         const currentLogin = "kyz"; 
 
-        // Массив предметов
-        let subjects = ["Военно-тактическая", "Русский язык", "Юридический"];
-
-        // База курсантов и их оценок
-        let cadets = [
+        // Исходные стандартные данные, если в хранилище еще ничего нет
+        const defaultSubjects = ["Военно-тактическая", "Русский язык", "Юридический"];
+        const defaultCadets = [
             { id: 1, surname: "Чернышов", firstname: "Тимофей", patronymic: "Владимирович", grades: { "Военно-тактическая": [5, 4], "Русский язык": [5] } },
             { id: 2, surname: "Куроки", firstname: "Такеши", patronymic: "Кацуович", grades: { "Юридический": [4, 3] } }
         ];
 
+        // Загрузка актуальных данных из LocalStorage браузера
+        let subjects = JSON.parse(localStorage.getItem('academy_subjects')) || defaultSubjects;
+        let cadets = JSON.parse(localStorage.getItem('academy_cadets')) || defaultCadets;
+
+        // Функция сохранения текущего состояния в память браузера
+        function saveToStorage() {
+            localStorage.setItem('academy_subjects', JSON.stringify(subjects));
+            localStorage.setItem('academy_cadets', JSON.stringify(cadets));
+        }
+
         window.addEventListener('DOMContentLoaded', () => {
-            // Включаем панель админа, если ник "kyz"
             if (currentLogin === "kyz") {
                 document.getElementById('adminPanel').style.display = 'block';
             }
             renderTable();
         });
 
-        // Функция выдачи роли
         function assignRoleToUser() {
             const targetLogin = document.getElementById('assignLoginInput').value.trim();
             const selectedRole = document.getElementById('assignRoleSelect').value;
@@ -362,20 +374,18 @@
             document.getElementById('assignLoginInput').value = '';
         }
 
-        // Рендеринг всей таблицы
         function renderTable() {
             renderHeader();
             renderBody();
             initCustomSelects();
         }
 
-        // --- ГЕНЕРАЦИЯ ШАПКИ И РЕДАКТИРОВАНИЕ ПРЕДМЕТОВ ---
+        // --- ГЕНЕРАЦИЯ ШАПКИ ---
         function renderHeader() {
             const thead = document.getElementById('journalHead');
             thead.innerHTML = '';
             const tr = document.createElement('tr');
 
-            // Первая ячейка (Курсант + кнопки + и -)
             const thCadet = document.createElement('th');
             thCadet.style.width = "20%";
             thCadet.innerHTML = `
@@ -389,12 +399,10 @@
             `;
             tr.appendChild(thCadet);
 
-            // Колонки предметов
             subjects.forEach((subject, index) => {
                 const th = document.createElement('th');
                 th.textContent = subject;
                 
-                // Делаем колонку редактируемой по клику, если логин kyz
                 if (currentLogin === "kyz") {
                     th.setAttribute('contenteditable', 'true');
                     th.className = 'editable-subject-th';
@@ -402,25 +410,23 @@
                     
                     let oldName = subject;
                     
-                    // Сохранение названия при клике вне колонки
                     th.addEventListener('blur', () => {
                         let newName = th.textContent.trim();
                         if (newName && newName !== oldName) {
                             subjects[index] = newName;
-                            // Переносим существующие оценки на новое название предмета
                             cadets.forEach(cadet => {
                                 if (cadet.grades && cadet.grades[oldName]) {
                                     cadet.grades[newName] = cadet.grades[oldName];
                                     delete cadet.grades[oldName];
                                 }
                             });
+                            saveToStorage(); // Сохраняем переименование предмета
                             renderTable();
                         } else {
-                            th.textContent = oldName; // Возвращаем, если пусто
+                            th.textContent = oldName; 
                         }
                     });
 
-                    // Отключаем перенос строки и сохраняем по кнопке Enter
                     th.addEventListener('keydown', (e) => {
                         if (e.key === 'Enter') {
                             e.preventDefault();
@@ -431,7 +437,6 @@
                 tr.appendChild(th);
             });
 
-            // Последние колонки
             tr.innerHTML += `
                 <th style="width: 100px; text-align: center;">Ср. балл</th>
                 <th style="width: 70px; text-align: center;">Удалить</th>
@@ -443,7 +448,7 @@
             }
         }
 
-        // --- ГЕНЕРАЦИЯ СТРОК (КУРСАНТОВ И ОЦЕНОК) ---
+        // --- ГЕНЕРАЦИЯ СТРОК ---
         function renderBody() {
             const tbody = document.getElementById('journalBody');
             tbody.innerHTML = '';
@@ -458,13 +463,11 @@
                     </td>
                 `;
 
-                // Отрисовка ячеек для каждого предмета
                 subjects.forEach(subject => {
                     const currentGrades = cadet.grades[subject] || [];
                     rowHtml += `<td>${createGradeCellHtml(cadet.id, subject, currentGrades)}</td>`;
                 });
 
-                // Средний балл
                 const avg = calculateAverage(cadet);
                 const avgClass = (avg !== "-" && avg >= 4) ? 'good' : '';
 
@@ -482,9 +485,13 @@
             });
         }
 
-        // --- ФУНКЦИИ ВЫСТАВЛЕНИЯ ОЦЕНОК ---
+        // --- УПРАВЛЕНИЕ ОЦЕНКАМИ ---
         function createGradeCellHtml(cadetId, subjectName, currentGrades) {
-            let grHtml = currentGrades.map(g => `<span class="single-grade g${g}">${g}</span>`).join('');
+            // При клике на оценку вызывается removeGrade()
+            let grHtml = currentGrades.map((g, index) => 
+                `<span class="single-grade g${g}" onclick="removeGrade(${cadetId}, '${subjectName}', ${index})" title="Нажмите, чтобы удалить оценку">${g}</span>`
+            ).join('');
+            
             return `
                 <div class="grade-cell-wrapper">
                     <div class="grades-history">${grHtml}</div>
@@ -511,30 +518,48 @@
             const container = buttonEl.closest('.grade-control-block').querySelector('.custom-select-container');
             const chosenVal = container.getAttribute('data-chosen-value');
 
-            if (!chosenVal || chosenVal === "-") return alert("Сначала выберите оценку в выпадающем списке (нажмите на минус)!");
+            if (!chosenVal || chosenVal === "-") return alert("Сначала выберите оценку!");
 
             const cadet = cadets.find(c => c.id === cadetId);
             if (cadet) {
                 if (!cadet.grades[subjectName]) cadet.grades[subjectName] = [];
                 cadet.grades[subjectName].push(Number(chosenVal));
-                renderTable(); // Перерисовываем для обновления списка и среднего балла
+                
+                saveToStorage(); // Сохраняем новую оценку
+                renderTable();
+            }
+        }
+
+        // Функция удаления конкретной оценки по клику на неё
+        function removeGrade(cadetId, subjectName, gradeIndex) {
+            if (confirm("Вы точно хотите удалить эту оценку?")) {
+                const cadet = cadets.find(c => c.id === cadetId);
+                if (cadet && cadet.grades[subjectName]) {
+                    cadet.grades[subjectName].splice(gradeIndex, 1); // Удаляем оценку из массива
+                    
+                    saveToStorage(); // Сохраняем изменения в памяти
+                    renderTable();   // Обновляем интерфейс
+                }
             }
         }
 
         function calculateAverage(cadet) {
             let total = 0, count = 0;
             for (let sub in cadet.grades) {
-                cadet.grades[sub].forEach(g => { total += g; count++; });
+                if (cadet.grades[sub]) {
+                    cadet.grades[sub].forEach(g => { total += g; count++; });
+                }
             }
             return count === 0 ? "-" : (total / count).toFixed(1);
         }
 
-        // --- ФУНКЦИИ ДОБАВЛЕНИЯ/УДАЛЕНИЯ ПРЕДМЕТОВ (+ И -) ---
+        // --- УПРАВЛЕНИЕ КОЛОНКАМИ ПРЕДМЕТОВ ---
         function addSubject(e) {
             e.stopPropagation();
             const newName = prompt("Введите название нового предмета:");
             if (newName && newName.trim() !== "") {
                 subjects.push(newName.trim());
+                saveToStorage(); // Сохраняем новый предмет
                 renderTable();
             }
         }
@@ -544,18 +569,18 @@
             if (subjects.length === 0) return;
             if (confirm(`Удалить последний предмет "${subjects[subjects.length - 1]}"?`)) {
                 subjects.pop();
+                saveToStorage(); // Сохраняем удаление предмета
                 renderTable();
             }
         }
 
-        // --- РАБОТА ВЫПАДАЮЩИХ СПИСКОВ ОЦЕНОК И МЕНЮ ПРОФИЛЯ ---
+        // --- ВЫПАДАЮЩИЕ СПИСКИ И МЕНЮ ---
         function initCustomSelects() {
             document.querySelectorAll('.custom-select-container').forEach(container => {
                 const trigger = container.querySelector('.custom-select-trigger');
                 const dropdown = container.querySelector('.custom-options-dropdown');
                 const valueText = container.querySelector('.selected-value');
 
-                // Открытие/закрытие списка оценок
                 trigger.addEventListener('click', (e) => {
                     e.stopPropagation();
                     document.querySelectorAll('.custom-select-container.open').forEach(other => {
@@ -564,7 +589,6 @@
                     container.classList.toggle('open');
                 });
 
-                // Выбор оценки
                 dropdown.querySelectorAll('li').forEach(option => {
                     option.addEventListener('click', (e) => {
                         e.stopPropagation();
@@ -582,13 +606,12 @@
             document.getElementById('settingsPanel').classList.toggle('active'); 
         }
 
-        // Закрытие всех меню при клике по пустому месту
         document.addEventListener('click', () => {
             document.getElementById('settingsPanel').classList.remove('active');
             document.querySelectorAll('.custom-select-container.open').forEach(el => el.classList.remove('open'));
         });
 
-        // --- УПРАВЛЕНИЕ КУРСАНТАМИ (ДОБАВИТЬ/УДАЛИТЬ/НАЙТИ) ---
+        // --- УПРАВЛЕНИЕ КУРСАНТАМИ ---
         function addCadet() {
             const surname = document.getElementById('surNameInput').value.trim();
             const firstname = document.getElementById('firstNameInput').value.trim();
@@ -597,9 +620,10 @@
             if (!surname || !firstname) return alert('Заполните Фамилию и Имя!');
             
             cadets.push({ id: Date.now(), surname, firstname, patronymic, grades: {} });
+            
+            saveToStorage(); // Сохраняем нового курсанта
             renderTable();
             
-            // Очистка полей
             document.getElementById('surNameInput').value = '';
             document.getElementById('firstNameInput').value = '';
             document.getElementById('patronymicInput').value = '';
@@ -608,6 +632,7 @@
         function deleteCadet(id) { 
             if (confirm("Вы точно хотите удалить этого курсанта?")) {
                 cadets = cadets.filter(c => c.id !== id); 
+                saveToStorage(); // Сохраняем удаление курсанта
                 renderTable(); 
             }
         }
